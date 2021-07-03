@@ -145,6 +145,8 @@ namespace NeuralNetBuilderAPI
             stopwatch.Start();
             await initializer.TrainAsync();
             stopwatch.Stop();
+
+            await initializer.SaveTrainedNetAsync();
         }
         private static void ShowStatus()
         {
