@@ -40,10 +40,13 @@ namespace NeuralNetBuilderAPI
 
         #endregion
 
+        #region command names
+
         public string SetGeneralPath { get; } = "path";
         public string SetFileNamePrefix { get; } = "path prefix";
         public string SetFileNameSuffix { get; } = "path suffix";
-        public string SetAllPaths { get; } = "path all";
+        public string ResetPaths { get; } = "path reset";
+        public string UseGeneralPathAndDefaultNames { get; } = "path general";
         public string SetInitializedNetPath { get; } = "path net -0";
         public string SetTrainedNetPath { get; } = "path net -1";
         public string SetSampleSetPath { get; } = "path samples";
@@ -58,22 +61,32 @@ namespace NeuralNetBuilderAPI
         public string ShowTrainerParameters { get; } = "show trainer -p";
         public string ShowSampleSetParameters { get; } = "show samples -p";
 
-        public string Log { get; } = "log on";
-        public string Unlog { get; } = "log off";
-        public string InitializeNet { get; } = "init net";
-        public string InitializeTrainer { get; } = "init trainer";
+        public string CreateNetParameters { get; } = "create net -p";
+        public string CreateTrainerParameters { get; } = "create trainer -p";
+        public string CreateSampleSetParameters { get; } = "create samples -p";
+        public string CreateNet { get; } = "create net";
+        public string CreateTrainer { get; } = "create trainer";
         public string CreateSampleSet { get; } = "create samples";
+
         public string LoadInitializedNet { get; } = "load net -0";
         public string LoadTrainedNet { get; } = "load net -1";
         public string LoadSampleSet { get; } = "load samples";
         public string LoadNetParameters { get; } = "load net -p";
         public string LoadTrainerParameters { get; } = "load trainer -p";
         public string LoadSampleSetParameters { get; } = "load samples -p";
+
+        public string SaveNetParameters { get; } = "save net -p";
+        public string SaveTrainerParameters { get; } = "save trainer -p";
+        public string SaveSampleSetParameters { get; } = "save samples -p";
         public string SaveInitializedNet { get; } = "save net -0";
         public string SaveTrainedNet { get; } = "save net -1";
         public string SaveSampleSet { get; } = "save samples";
+
+        public string Log { get; } = "log on";
+        public string Unlog { get; } = "log off";
         public string Train { get; } = "train";
         public string TestTraining { get; } = "test";
 
+        #endregion
     }
 }

@@ -17,6 +17,7 @@ namespace NeuralNetBuilderAPI
         private static ParameterBuilder parameters;
         private static CommandNames commands;
         private static string commandsPath = AppDomain.CurrentDomain.BaseDirectory + @"\CommandNames.txt";
+        private static bool isInitializerStatusChangedEventActive = true;
 
         #endregion
 
@@ -30,7 +31,7 @@ namespace NeuralNetBuilderAPI
             parameters = initializer.Parameters;
             commands = CommandNames.GetDefaultCommandNames();
 
-            paths.SetAllPaths();
+            paths.ResetPaths();
             ShowHelp();
             ShowSettings();
 
@@ -45,6 +46,7 @@ namespace NeuralNetBuilderAPI
 
             if (enteredPath == default)
             {
+                // Show
                 if (enteredCommand == commands.ShowHelp)
                     ShowHelp();
                 else if (enteredCommand == commands.ShowSettings)
@@ -55,43 +57,66 @@ namespace NeuralNetBuilderAPI
                     ShowTrainerParameters();
                 else if (enteredCommand == commands.ShowSampleSetParameters)
                     ShowSampleSetParameters();
-                else if (enteredCommand == commands.Log)
-                    Log();
-                else if (enteredCommand == commands.Unlog)
-                    Unlog();
-                else if (enteredCommand == commands.SetAllPaths)
-                    paths.SetAllPaths();
-                else if (enteredCommand == commands.TestTraining)
-                    await TestTraining();
+
+                // Load
                 else if (enteredCommand == commands.LoadNetParameters)
-                    await initializer.LoadNetParametersAsync();
+                    await parameters.LoadNetParametersAsync();
                 else if (enteredCommand == commands.LoadTrainerParameters)
-                    await initializer.LoadTrainerParametersAsync();
+                    await parameters.LoadTrainerParametersAsync();
                 else if (enteredCommand == commands.LoadSampleSetParameters)
-                    await initializer.LoadSampleSetParametersAsync();
+                    await parameters.LoadSampleSetParametersAsync();
                 else if (enteredCommand == commands.LoadInitializedNet)
                     await initializer.LoadInitializedNetAsync();
                 else if (enteredCommand == commands.LoadTrainedNet)
                     await initializer.LoadTrainedNetAsync();
                 else if (enteredCommand == commands.LoadSampleSet)
                     await initializer.LoadSampleSetAsync();
-                else if (enteredCommand == commands.InitializeNet)
+
+                // Create
+                else if (enteredCommand == commands.CreateSampleSetParameters)
+                    parameters.CreateSampleSetParameters();
+                else if (enteredCommand == commands.CreateNetParameters)
+                    parameters.CreateNetParameters();
+                else if (enteredCommand == commands.CreateTrainerParameters)
+                    parameters.CreateTrainerParameters();
+                else if (enteredCommand == commands.CreateNet)
                     await initializer.CreateNetAsync();
-                else if (enteredCommand == commands.InitializeTrainer)
+                else if (enteredCommand == commands.CreateTrainer)
                 {
                     if (await initializer.CreateTrainerAsync())
                         initializer.Trainer.TrainerStatusChanged += Trainer_StatusChanged_EventHandlingMethod;
                 }
                 else if (enteredCommand == commands.CreateSampleSet)
                     await initializer.CreateSampleSetAsync();
-                else if (enteredCommand == commands.Train)
-                    await TrainAsync();
+
+                // Save
+                else if (enteredCommand == commands.SaveSampleSetParameters)
+                    await parameters.SaveSampleSetParametersAsync();
+                else if (enteredCommand == commands.SaveNetParameters)
+                    await parameters.SaveNetParametersAsync();
+                else if (enteredCommand == commands.SaveTrainerParameters)
+                    await parameters.SaveTrainerParametersAsync();
                 else if (enteredCommand == commands.SaveInitializedNet)
                     await initializer.SaveInitializedNetAsync();
                 else if (enteredCommand == commands.SaveTrainedNet)
                     await initializer.SaveTrainedNetAsync();
                 else if (enteredCommand == commands.SaveSampleSet)
                     await initializer.SaveSampleSetAsync();
+
+                // Misc
+                else if (enteredCommand == commands.Log)
+                    Log();
+                else if (enteredCommand == commands.Unlog)
+                    Unlog();
+                else if (enteredCommand == commands.TestTraining)
+                    await TestTraining();
+                else if (enteredCommand == commands.Train)
+                    await TrainAsync();
+                else if (enteredCommand == commands.ResetPaths)
+                    paths.ResetPaths();
+                else if (enteredCommand == commands.UseGeneralPathAndDefaultNames)
+                    paths.UseGeneralPathAndDefaultNames();
+
                 else
                     Console.WriteLine("Unkown Command.");
             }
@@ -133,58 +158,85 @@ namespace NeuralNetBuilderAPI
 
         private static void ShowSettings()
         {
+            // Prevent double output about 'X' is null (from initlializer property) plus 'X' is unset here
+            // by deactivating the event handling method temporarily.
+            isInitializerStatusChangedEventActive = false;
+
             Console.WriteLine("\n" +
                 $"     Current Settings:\n\n" +
-                $"     General path is {(paths.General == default ? "unset." : paths.General)}\n" +
-                $"     General prefix is {(paths.FileName_Prefix == default ? "unset." : paths.FileName_Prefix)}\n" +
-                $"     General suffix is {(paths.FileName_Suffix == default ? "unset." : paths.FileName_Suffix)}\n\n" +
-                $"     Path to net parameters is {(paths.NetParameters == default ? "unset." : paths.NetParameters)}\n" +
-                $"     Path to trainer parameters is {(paths.TrainerParameters == default ? "unset." : paths.TrainerParameters)}\n" +
-                $"     Path to sample set parameters is {(paths.SampleSetParameters == default ? "unset." : paths.SampleSetParameters)}\n" +
-                $"     Path to initialized net is {(paths.InitializedNet == default ? "unset." : paths.InitializedNet)}\n" +
-                $"     Path to trained net is {(paths.TrainedNet == default ? "unset." : paths.TrainedNet)}\n" +
-                $"     Path to sample set is {(paths.SampleSet == default ? "unset." : paths.SampleSet)}\n" +
-                $"     Path to log file is {(paths.Log == default ? "unset." : paths.Log)}\n\n" +
-                $"     Logging is {(initializer.IsLogged ? "activated." : "deactivated.")}\n" +
-                $"     Sample Set Parameters are {(parameters.SampleSetParameters == null ? "unset." : "set.")}\n" +
-                $"     Sample Set is {(initializer.SampleSet == null ? "unset." : "set.")}\n" +
-                $"     Net Parameters are {(parameters.NetParameters == null ? "unset." : "set.")}\n" + 
-                $"     Trainer Parameters are {(parameters.TrainerParameters == null ? "unset." : "set.")}\n" +
-                // double output if initializer.Net is null ?:
-                $"     Net is {(initializer.Net == null ? "raw." : "initialized.")}\n" + 
-                $"     Trainer is {(initializer.Trainer == null ? "raw." : "initialized.")}\n");
+                $"     General path    : {(paths.General == default ? " - " : paths.General)}\n" +
+                $"     General prefix  : {(paths.FileName_Prefix == default ? " - " : paths.FileName_Prefix)}\n" +
+                $"     General suffix  : {(paths.FileName_Suffix == default ? " - " : paths.FileName_Suffix)}\n\n" +
+
+                $"     Path to sample set parameters    : {(paths.SampleSetParameters == default ? " - " : paths.SampleSetParameters)}\n" +
+                $"     Path to net parameters           : {(paths.NetParameters == default ? " - " : paths.NetParameters)}\n" +
+                $"     Path to trainer parameters       : {(paths.TrainerParameters == default ? " - " : paths.TrainerParameters)}\n" +
+                $"     Path to sample set               : {(paths.SampleSet == default ? " - " : paths.SampleSet)}\n" +
+                $"     Path to initialized net          : {(paths.InitializedNet == default ? " - " : paths.InitializedNet)}\n" +
+                $"     Path to trained net              : {(paths.TrainedNet == default ? " - " : paths.TrainedNet)}\n" +
+                $"     Path to log file                 : {(paths.Log == default ? " - " : paths.Log)}\n\n" +
+
+                $"     Sample Set Parameters : {(parameters.SampleSetParameters == null ? " - " : "set")}\n" +
+                $"     Net Parameters        : {(parameters.NetParameters == null ? " - " : "set")}\n" + 
+                $"     Trainer Parameters    : {(parameters.TrainerParameters == null ? " - " : "set")}\n" +
+                $"     Sample Set            : {(initializer.SampleSet == null ? " - " : "set")}\n" +
+                $"     Net                   : {(initializer.Net == null ? " - " : "set")}\n" + 
+                $"     Trainer               : {(initializer.Trainer == null ? " - " : "set")}\n\n" +
+
+                $"     Available sample set templates: {parameters.SampleSetTemplates.ToStringFromCollection()}\n" +
+                $"     Logging is {(initializer.IsLogged ? "on." : "off.")}\n\n");
+
+            // Reactivate the event handling method again.
+            isInitializerStatusChangedEventActive = true;
         }
         private static void ShowHelp()
         {
+            // wa load/save trainer?
             Console.WriteLine("\n" +
                 $"     All Commands: \n\n" +
-                $"     Set general path                     : {commands.SetGeneralPath}=[general path]\n" +
-                $"     Set general prefix for file names    : {commands.SetFileNamePrefix}=[general prefix]\n" +
-                $"     Set general suffix for file names    : {commands.SetFileNameSuffix}=[general suffix]\n" +
-                $"     Set path to initialized net          : {commands.SetInitializedNetPath}=[path to initialized net]\n" +
-                $"     Set path to trained net              : {commands.SetTrainedNetPath}=[path to trained net]\n" +
-                $"     Set path to sample set               : {commands.SetSampleSetPath}=[path to sample set]\n" +
-                $"     Set path to net parameters           : {commands.SetNetParametersPath}=[path to net parameters]\n" +
-                $"     Set path to trainer parameters       : {commands.SetTrainerParametersPath}=[path to trainer parameters]\n" +
-                $"     Set path to sample set parameters    : {commands.SetSampleSetParametersPath}=[path to sample set parameters]\n\n" +
-                $"     Load sample set parameters from file : {commands.LoadSampleSetParameters}\n" +
-                $"     Create sample set                    : {commands.CreateSampleSet}\n" +
-                $"     Load initialized net from file       : {commands.LoadInitializedNet}\n" +
-                $"     Load trained net from file           : {commands.LoadTrainedNet}\n" +
-                $"     Load sample set from file            : {commands.LoadSampleSet}\n" +
-                $"     Initialize the net                   : {commands.InitializeNet}\n" +
-                $"     Initialize the trainer               : {commands.InitializeTrainer}\n" +
-                $"     Save initialized net to file         : {commands.SaveInitializedNet}\n" +
-                $"     Save trained net to file             : {commands.SaveTrainedNet}\n" +
-                $"     Save sample set to file              : {commands.SaveSampleSet}\n" +
-                $"     Set path to log file                 : {commands.SetLogPath}=[path to log file]\n" +
-                $"     Deactivate logging                   : {commands.Unlog}\n" +
-                $"     Start training                       : {commands.Train}\n\n" +
-                $"     Show Settings                        : {commands.ShowSettings}\n" +
-                $"     Show this help                       : {commands.ShowHelp}\n" +
-                $"     Show net parameters                  : {commands.ShowNetParameters}\n" +
-                $"     Show trainer parameters              : {commands.ShowTrainerParameters}\n" +
-                $"     Show sample set parameters           : {commands.ShowSampleSetParameters}\n");
+                $"     Set general path                                 : {commands.SetGeneralPath}=[general path]\n" +
+                $"     Set general prefix for file names                : {commands.SetFileNamePrefix}=[general prefix]\n" +
+                $"     Set general suffix for file names                : {commands.SetFileNameSuffix}=[general suffix]\n" +
+                $"     Set path to initialized net                      : {commands.SetInitializedNetPath}=[path to initialized net]\n" +
+                $"     Set path to trained net                          : {commands.SetTrainedNetPath}=[path to trained net]\n" +
+                $"     Set path to sample set                           : {commands.SetSampleSetPath}=[path to sample set]\n" +
+                $"     Set path to net parameters                       : {commands.SetNetParametersPath}=[path to net parameters]\n" +
+                $"     Set path to trainer parameters                   : {commands.SetTrainerParametersPath}=[path to trainer parameters]\n" +
+                $"     Set path to sample set parameters                : {commands.SetSampleSetParametersPath}=[path to sample set parameters]\n" +
+                $"     Set path to log file                             : {commands.SetLogPath}=[path to log file]\n" +
+                $"     Use general path for all files and default names : {commands.UseGeneralPathAndDefaultNames}\n" +
+                $"     Reset general path and use default names         : {commands.ResetPaths}\n\n" +
+
+                $"     Load sample set parameters    : {commands.LoadSampleSetParameters}\n" +
+                $"     Load net parameters           : {commands.LoadNetParameters}\n" +
+                $"     Load trainer parameters       : {commands.LoadTrainerParameters}\n" +
+                $"     Load initialized net          : {commands.LoadInitializedNet}\n" +
+                $"     Load trained net              : {commands.LoadTrainedNet}\n" +
+                $"     Load sample set               : {commands.LoadSampleSet}\n\n" +
+
+                $"     Create sample set parameters  : {commands.CreateSampleSetParameters}\n" +
+                $"     Create the net parameters     : {commands.CreateNetParameters}\n" +
+                $"     Create the trainer parameters : {commands.CreateTrainerParameters}\n" +
+                $"     Create sample set             : {commands.CreateSampleSet}\n" +
+                $"     Create the net                : {commands.CreateNet}\n" +
+                $"     Create the trainer            : {commands.CreateTrainer}\n\n" +
+
+                $"     Save sample set parameters    : {commands.SaveSampleSetParameters}\n" +
+                $"     Save net parameters           : {commands.SaveNetParameters}\n" +
+                $"     Save trainer parameters       : {commands.SaveTrainerParameters}\n" +
+                $"     Save sample set               : {commands.SaveSampleSet}\n" +
+                $"     Save initialized net          : {commands.SaveInitializedNet}\n" +
+                $"     Save trained net              : {commands.SaveTrainedNet}\n\n" +
+
+                $"     Show Settings                 : {commands.ShowSettings}\n" +
+                $"     Show this help                : {commands.ShowHelp}\n" +
+                $"     Show net parameters           : {commands.ShowNetParameters}\n" +
+                $"     Show trainer parameters       : {commands.ShowTrainerParameters}\n" +
+                $"     Show sample set parameters    : {commands.ShowSampleSetParameters}\n\n" +
+
+                $"     Deactivate logging            : {commands.Unlog}\n" +
+                $"     Start test training           : {commands.TestTraining}\n" +
+                $"     Start training                : {commands.Train}\n\n");
         }
         private static void ShowNetParameters()
         {
@@ -248,11 +300,11 @@ namespace NeuralNetBuilderAPI
             paths.General = @"C:\Users\Jan_PC\Documents\_NeuralNetApp\Saves\";
             paths.FileName_Prefix = @"Test\";
             paths.FileName_Suffix = "_test.txt";
-            paths.SetAllPaths();
+            paths.ResetPaths();
 
-            if (!await initializer.LoadNetParametersAsync())
+            if (!await parameters.LoadNetParametersAsync())
                 return;
-            if (!await initializer.LoadTrainerParametersAsync())
+            if (!await parameters.LoadTrainerParametersAsync())
                 return;
             if (!await initializer.LoadInitializedNetAsync())
                 return;        // Always check if the loaded initialized net suits loaded parameters!
@@ -274,7 +326,8 @@ namespace NeuralNetBuilderAPI
 
         private static void Initializer_StatusChanged_EventHandlingMethod(object initializer, InitializerStatusChangedEventArgs e)
         {
-            Console.WriteLine($"{e.Info}");
+            if(isInitializerStatusChangedEventActive)
+                Console.WriteLine($"{e.Info}");
         }
         private static void Trainer_StatusChanged_EventHandlingMethod(object trainer, TrainerStatusChangedEventArgs e)
         {
