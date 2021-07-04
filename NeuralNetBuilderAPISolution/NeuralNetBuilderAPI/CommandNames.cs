@@ -52,8 +52,12 @@ namespace NeuralNetBuilderAPI
         public string SetSampleSetParametersPath { get; } = "path samples -p";
         public string SetLogPath { get; } = "path log";
         
-        public string Status { get; } = "status";
-        public string Help { get; } = "help";
+        public string ShowHelp { get; } = "show help";
+        public string ShowSettings { get; } = "show settings";
+        public string ShowNetParameters { get; } = "show net -p";
+        public string ShowTrainerParameters { get; } = "show trainer -p";
+        public string ShowSampleSetParameters { get; } = "show samples -p";
+
         public string Log { get; } = "log on";
         public string Unlog { get; } = "log off";
         public string InitializeNet { get; } = "init net";
