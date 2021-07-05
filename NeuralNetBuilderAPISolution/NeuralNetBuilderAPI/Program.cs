@@ -41,10 +41,10 @@ namespace NeuralNetBuilderAPI
         private static async Task ExecuteConsoleCommands()
         {
             string consoleInput = Console.ReadLine();
-            string enteredCommand = consoleInput.Split('=').First();
-            string enteredPath = consoleInput.Contains('=') ? consoleInput.Split('=').Last() : default;
+            
+            AnalyzeInput(consoleInput, out string enteredCommand, out string enteredPath, out string enteredParameterName, out string enteredParameterValue, out string layerId);
 
-            if (enteredPath == default)
+            if (enteredPath == null)
             {
                 // Show
                 if (enteredCommand == commands.ShowHelp)
@@ -74,7 +74,7 @@ namespace NeuralNetBuilderAPI
 
                 // Create
                 else if (enteredCommand == commands.CreateSampleSetParameters)
-                    parameters.CreateSampleSetParameters();
+                    parameters.CreateSampleSetParameters(enteredParameterValue);
                 else if (enteredCommand == commands.CreateNetParameters)
                     parameters.CreateNetParameters();
                 else if (enteredCommand == commands.CreateTrainerParameters)
@@ -103,6 +103,16 @@ namespace NeuralNetBuilderAPI
                 else if (enteredCommand == commands.SaveSampleSet)
                     await initializer.SaveSampleSetAsync();
 
+                // Change a parameter
+                else if (enteredCommand == commands.ChangeASampleSetParameter)
+                    parameters.ChangeASampleSetParameter(enteredParameterName, enteredParameterValue);
+                else if (enteredCommand == commands.ChangeANetParameter)
+                    parameters.ChangeANetParameter(enteredParameterName, enteredParameterValue);
+                else if (enteredCommand == commands.ChangeALayerParameter)
+                    parameters.ChangeALayerParameter(enteredParameterName, enteredParameterValue);
+                else if (enteredCommand == commands.ChangeATrainerParameter)
+                    parameters.ChangeATrainerParameter(layerId, enteredParameterName, enteredParameterValue);
+
                 // Misc
                 else if (enteredCommand == commands.Log)
                     Log();
@@ -122,6 +132,7 @@ namespace NeuralNetBuilderAPI
             }
             else
             {
+                // Set path
                 if (enteredCommand == commands.SetGeneralPath)
                     paths.SetGeneralPath(enteredPath);
                 else if (enteredCommand == commands.SetFileNamePrefix)
@@ -146,6 +157,7 @@ namespace NeuralNetBuilderAPI
 
             await ExecuteConsoleCommands();
         }
+
         private static async Task TrainAsync()
         {
             stopwatch.Reset();
@@ -176,7 +188,7 @@ namespace NeuralNetBuilderAPI
                 $"     Path to trained net              : {(paths.TrainedNet == default ? " - " : paths.TrainedNet)}\n" +
                 $"     Path to log file                 : {(paths.Log == default ? " - " : paths.Log)}\n\n" +
 
-                $"     Sample Set Parameters : {(parameters.SampleSetParameters == null ? " - " : "set")}\n" +
+                $"     Sample Set Parameters : {(parameters.SampleSetParameters == null ? " - " : $"set (Name: {parameters.SampleSetParameters.Name})")}\n" +
                 $"     Net Parameters        : {(parameters.NetParameters == null ? " - " : "set")}\n" + 
                 $"     Trainer Parameters    : {(parameters.TrainerParameters == null ? " - " : "set")}\n" +
                 $"     Sample Set            : {(initializer.SampleSet == null ? " - " : "set")}\n" +
@@ -207,36 +219,37 @@ namespace NeuralNetBuilderAPI
                 $"     Use general path for all files and default names : {commands.UseGeneralPathAndDefaultNames}\n" +
                 $"     Reset general path and use default names         : {commands.ResetPaths}\n\n" +
 
-                $"     Load sample set parameters    : {commands.LoadSampleSetParameters}\n" +
-                $"     Load net parameters           : {commands.LoadNetParameters}\n" +
-                $"     Load trainer parameters       : {commands.LoadTrainerParameters}\n" +
-                $"     Load initialized net          : {commands.LoadInitializedNet}\n" +
-                $"     Load trained net              : {commands.LoadTrainedNet}\n" +
-                $"     Load sample set               : {commands.LoadSampleSet}\n\n" +
+                $"     Load sample set parameters          : {commands.LoadSampleSetParameters}\n" +
+                $"     Load net parameters                 : {commands.LoadNetParameters}\n" +
+                $"     Load trainer parameters             : {commands.LoadTrainerParameters}\n" +
+                $"     Load initialized net                : {commands.LoadInitializedNet}\n" +
+                $"     Load trained net                    : {commands.LoadTrainedNet}\n" +
+                $"     Load sample set                     : {commands.LoadSampleSet}\n\n" +
 
-                $"     Create sample set parameters  : {commands.CreateSampleSetParameters}\n" +
-                $"     Create the net parameters     : {commands.CreateNetParameters}\n" +
-                $"     Create the trainer parameters : {commands.CreateTrainerParameters}\n" +
-                $"     Create sample set             : {commands.CreateSampleSet}\n" +
-                $"     Create the net                : {commands.CreateNet}\n" +
-                $"     Create the trainer            : {commands.CreateTrainer}\n\n" +
-
-                $"     Save sample set parameters    : {commands.SaveSampleSetParameters}\n" +
-                $"     Save net parameters           : {commands.SaveNetParameters}\n" +
-                $"     Save trainer parameters       : {commands.SaveTrainerParameters}\n" +
-                $"     Save sample set               : {commands.SaveSampleSet}\n" +
-                $"     Save initialized net          : {commands.SaveInitializedNet}\n" +
-                $"     Save trained net              : {commands.SaveTrainedNet}\n\n" +
-
-                $"     Show Settings                 : {commands.ShowSettings}\n" +
-                $"     Show this help                : {commands.ShowHelp}\n" +
-                $"     Show net parameters           : {commands.ShowNetParameters}\n" +
-                $"     Show trainer parameters       : {commands.ShowTrainerParameters}\n" +
-                $"     Show sample set parameters    : {commands.ShowSampleSetParameters}\n\n" +
-
-                $"     Deactivate logging            : {commands.Unlog}\n" +
-                $"     Start test training           : {commands.TestTraining}\n" +
-                $"     Start training                : {commands.Train}\n\n");
+                $"     Create sample set parameters        : {commands.CreateSampleSetParameters}\n" +
+                $"     Create named sample set parameters  : {commands.CreateSampleSetParameters} [template name]\n" +
+                $"     Create the net parameters           : {commands.CreateNetParameters}\n" +
+                $"     Create the trainer parameters       : {commands.CreateTrainerParameters}\n" +
+                $"     Create sample set                   : {commands.CreateSampleSet}\n" +
+                $"     Create the net                      : {commands.CreateNet}\n" +
+                $"     Create the trainer                  : {commands.CreateTrainer}\n\n" +
+                                                           
+                $"     Save sample set parameters          : {commands.SaveSampleSetParameters}\n" +
+                $"     Save net parameters                 : {commands.SaveNetParameters}\n" +
+                $"     Save trainer parameters             : {commands.SaveTrainerParameters}\n" +
+                $"     Save sample set                     : {commands.SaveSampleSet}\n" +
+                $"     Save initialized net                : {commands.SaveInitializedNet}\n" +
+                $"     Save trained net                    : {commands.SaveTrainedNet}\n\n" +
+                                                           
+                $"     Show Settings                       : {commands.ShowSettings}\n" +
+                $"     Show this help                      : {commands.ShowHelp}\n" +
+                $"     Show net parameters                 : {commands.ShowNetParameters}\n" +
+                $"     Show trainer parameters             : {commands.ShowTrainerParameters}\n" +
+                $"     Show sample set parameters          : {commands.ShowSampleSetParameters}\n\n" +
+                                                           
+                $"     Deactivate logging                  : {commands.Unlog}\n" +
+                $"     Start test training                 : {commands.TestTraining}\n" +
+                $"     Start training                      : {commands.Train}\n\n");
         }
         private static void ShowNetParameters()
         {
@@ -319,6 +332,63 @@ namespace NeuralNetBuilderAPI
 
             await TrainAsync();
         }
+
+        #region helpers
+
+        private static bool AnalyzeInput(string consoleInput, out string command, out string path, out string paramName, out string paramValue, out string layerId)
+        {
+            command = null;
+            path = null;
+            paramName = null;
+            paramValue = null;
+            layerId = null;
+
+            try
+            {
+                if (!consoleInput.Contains('=') && !consoleInput.Contains(':'))
+                {
+                    command = consoleInput;
+                }
+                else if (consoleInput.Contains('=') && !consoleInput.Contains(':'))
+                {
+                    if (consoleInput.Where(x => x == '=').Count() > 1)
+                        throw new ArgumentException("No more than one '=' allowed per command!");
+
+                    var tmp = consoleInput.Split('=');
+                    command = tmp.First();
+                    path = tmp.Last();
+                }
+                else if (!consoleInput.Contains('=') && consoleInput.Contains(':'))
+                {
+                    if (consoleInput.Where(x => x == ':').Count() > 1)
+                        throw new ArgumentException("No more than one ':' allowed per command!");
+
+                    var tmp = consoleInput.Split(':');
+                    command = commands.ChangeANetParameter;
+                    paramName = tmp.First();
+                    paramValue = tmp.Last();
+
+                    if (command.Contains(nameof(commands.ChangeALayerParameter)))
+                    {
+                        layerId = command.Substring(0, nameof(commands.ChangeALayerParameter).Length);
+                        command.Replace(layerId, "");
+                    }
+                }
+                else if (consoleInput.Contains('=') && consoleInput.Contains(':'))
+                {
+                    throw new ArgumentException("'=' AND ':' in one command are not allowed!");
+                }
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e.Message);
+                return false;
+            }
+
+            return true;
+        }
+
+        #endregion
 
         #endregion
 

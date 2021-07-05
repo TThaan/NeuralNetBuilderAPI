@@ -87,6 +87,11 @@ namespace NeuralNetBuilderAPI
         public string Train { get; } = "train";
         public string TestTraining { get; } = "test";
 
+        public string ChangeASampleSetParameter { get; set; } = "samples";
+        public string ChangeANetParameter { get; set; } = "net";
+        public string ChangeALayerParameter { get; set; } = "layer";
+        public string ChangeATrainerParameter { get; set; } = "trainer";
+
         #endregion
     }
 }
