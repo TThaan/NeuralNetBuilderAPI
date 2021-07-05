@@ -57,10 +57,12 @@ namespace NeuralNetBuilderAPI
         
         public string ShowHelp { get; } = "show help";
         public string ShowSettings { get; } = "show settings";
+        public string ShowAllParameters { get; } = "show -p";
         public string ShowNetParameters { get; } = "show net -p";
         public string ShowTrainerParameters { get; } = "show trainer -p";
         public string ShowSampleSetParameters { get; } = "show samples -p";
 
+        public string CreateAllParameters { get; } = "create -p";
         public string CreateNetParameters { get; } = "create net -p";
         public string CreateTrainerParameters { get; } = "create trainer -p";
         public string CreateSampleSetParameters { get; } = "create samples -p";
@@ -71,10 +73,12 @@ namespace NeuralNetBuilderAPI
         public string LoadInitializedNet { get; } = "load net -0";
         public string LoadTrainedNet { get; } = "load net -1";
         public string LoadSampleSet { get; } = "load samples";
+        public string LoadAllParameters { get; } = "load -p";
         public string LoadNetParameters { get; } = "load net -p";
         public string LoadTrainerParameters { get; } = "load trainer -p";
         public string LoadSampleSetParameters { get; } = "load samples -p";
 
+        public string SaveAllParameters { get; } = "save -p";
         public string SaveNetParameters { get; } = "save net -p";
         public string SaveTrainerParameters { get; } = "save trainer -p";
         public string SaveSampleSetParameters { get; } = "save samples -p";
@@ -87,10 +91,11 @@ namespace NeuralNetBuilderAPI
         public string Train { get; } = "train";
         public string TestTraining { get; } = "test";
 
-        public string ChangeASampleSetParameter { get; set; } = "samples";
-        public string ChangeANetParameter { get; set; } = "net";
-        public string ChangeALayerParameter { get; set; } = "layer";
-        public string ChangeATrainerParameter { get; set; } = "trainer";
+        public string ChangeParameter { get; set; } = "p ";
+        //public string ChangeSampleSetParameter { get; set; } = "samples";
+        //public string ChangeNetParameter { get; set; } = "net";
+        //public string ChangeLayerParameter { get; set; } = "layer";
+        //public string ChangeTrainerParameter { get; set; } = "trainer";
 
         #endregion
     }

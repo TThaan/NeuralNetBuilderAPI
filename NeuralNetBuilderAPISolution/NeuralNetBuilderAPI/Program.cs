@@ -46,7 +46,8 @@ namespace NeuralNetBuilderAPI
 
             if (enteredPath == null)
             {
-                // Show
+                #region Show
+
                 if (enteredCommand == commands.ShowHelp)
                     ShowHelp();
                 else if (enteredCommand == commands.ShowSettings)
@@ -57,8 +58,15 @@ namespace NeuralNetBuilderAPI
                     ShowTrainerParameters();
                 else if (enteredCommand == commands.ShowSampleSetParameters)
                     ShowSampleSetParameters();
+                else if (enteredCommand == commands.ShowAllParameters)
+                    ShowAllParameters();
 
-                // Load
+                #endregion
+
+                #region Load
+
+                else if (enteredCommand == commands.LoadAllParameters)
+                    await parameters.LoadAllParametersAsync();
                 else if (enteredCommand == commands.LoadNetParameters)
                     await parameters.LoadNetParametersAsync();
                 else if (enteredCommand == commands.LoadTrainerParameters)
@@ -72,13 +80,18 @@ namespace NeuralNetBuilderAPI
                 else if (enteredCommand == commands.LoadSampleSet)
                     await initializer.LoadSampleSetAsync();
 
-                // Create
+                #endregion
+
+                #region Create
+
                 else if (enteredCommand == commands.CreateSampleSetParameters)
                     parameters.CreateSampleSetParameters(enteredParameterValue);
                 else if (enteredCommand == commands.CreateNetParameters)
                     parameters.CreateNetParameters();
                 else if (enteredCommand == commands.CreateTrainerParameters)
                     parameters.CreateTrainerParameters();
+                else if (enteredCommand == commands.CreateAllParameters)
+                    parameters.CreateAllParameters();
                 else if (enteredCommand == commands.CreateNet)
                     await initializer.CreateNetAsync();
                 else if (enteredCommand == commands.CreateTrainer)
@@ -89,7 +102,12 @@ namespace NeuralNetBuilderAPI
                 else if (enteredCommand == commands.CreateSampleSet)
                     await initializer.CreateSampleSetAsync();
 
-                // Save
+                #endregion
+
+                #region Save
+
+                else if (enteredCommand == commands.SaveAllParameters)
+                    await parameters.SaveAllParametersAsync();
                 else if (enteredCommand == commands.SaveSampleSetParameters)
                     await parameters.SaveSampleSetParametersAsync();
                 else if (enteredCommand == commands.SaveNetParameters)
@@ -103,17 +121,17 @@ namespace NeuralNetBuilderAPI
                 else if (enteredCommand == commands.SaveSampleSet)
                     await initializer.SaveSampleSetAsync();
 
-                // Change a parameter
-                else if (enteredCommand == commands.ChangeASampleSetParameter)
-                    parameters.ChangeASampleSetParameter(enteredParameterName, enteredParameterValue);
-                else if (enteredCommand == commands.ChangeANetParameter)
-                    parameters.ChangeANetParameter(enteredParameterName, enteredParameterValue);
-                else if (enteredCommand == commands.ChangeALayerParameter)
-                    parameters.ChangeALayerParameter(enteredParameterName, enteredParameterValue);
-                else if (enteredCommand == commands.ChangeATrainerParameter)
-                    parameters.ChangeATrainerParameter(layerId, enteredParameterName, enteredParameterValue);
+                #endregion
 
-                // Misc
+                #region Change parameter
+
+                else if (enteredCommand == commands.ChangeParameter)
+                    parameters.ChangeParameter(enteredParameterName, enteredParameterValue, layerId);
+
+                #endregion
+
+                #region Misc
+
                 else if (enteredCommand == commands.Log)
                     Log();
                 else if (enteredCommand == commands.Unlog)
@@ -129,10 +147,13 @@ namespace NeuralNetBuilderAPI
 
                 else
                     Console.WriteLine("Unkown Command.");
+
+                #endregion
             }
             else
             {
-                // Set path
+                #region Set path
+
                 if (enteredCommand == commands.SetGeneralPath)
                     paths.SetGeneralPath(enteredPath);
                 else if (enteredCommand == commands.SetFileNamePrefix)
@@ -153,6 +174,8 @@ namespace NeuralNetBuilderAPI
                     paths.SetLogPath(enteredPath);
                 else if (enteredCommand == commands.SetSampleSetPath)
                     paths.SetSampleSetPath(enteredPath);
+
+                #endregion
             }
 
             await ExecuteConsoleCommands();
@@ -219,6 +242,7 @@ namespace NeuralNetBuilderAPI
                 $"     Use general path for all files and default names : {commands.UseGeneralPathAndDefaultNames}\n" +
                 $"     Reset general path and use default names         : {commands.ResetPaths}\n\n" +
 
+                $"     Load all parameters                 : {commands.LoadAllParameters}\n" +
                 $"     Load sample set parameters          : {commands.LoadSampleSetParameters}\n" +
                 $"     Load net parameters                 : {commands.LoadNetParameters}\n" +
                 $"     Load trainer parameters             : {commands.LoadTrainerParameters}\n" +
@@ -226,6 +250,8 @@ namespace NeuralNetBuilderAPI
                 $"     Load trained net                    : {commands.LoadTrainedNet}\n" +
                 $"     Load sample set                     : {commands.LoadSampleSet}\n\n" +
 
+                // Implement/Check optionality
+                $"     Create all parameters               : {commands.CreateAllParameters} [optional: template name]\n" +
                 $"     Create sample set parameters        : {commands.CreateSampleSetParameters}\n" +
                 $"     Create named sample set parameters  : {commands.CreateSampleSetParameters} [template name]\n" +
                 $"     Create the net parameters           : {commands.CreateNetParameters}\n" +
@@ -233,23 +259,37 @@ namespace NeuralNetBuilderAPI
                 $"     Create sample set                   : {commands.CreateSampleSet}\n" +
                 $"     Create the net                      : {commands.CreateNet}\n" +
                 $"     Create the trainer                  : {commands.CreateTrainer}\n\n" +
-                                                           
+
+                $"     Save all parameters                 : {commands.SaveAllParameters}\n" +
                 $"     Save sample set parameters          : {commands.SaveSampleSetParameters}\n" +
                 $"     Save net parameters                 : {commands.SaveNetParameters}\n" +
                 $"     Save trainer parameters             : {commands.SaveTrainerParameters}\n" +
                 $"     Save sample set                     : {commands.SaveSampleSet}\n" +
                 $"     Save initialized net                : {commands.SaveInitializedNet}\n" +
                 $"     Save trained net                    : {commands.SaveTrainedNet}\n\n" +
-                                                           
+                
                 $"     Show Settings                       : {commands.ShowSettings}\n" +
                 $"     Show this help                      : {commands.ShowHelp}\n" +
+                $"     Show all parameters                 : {commands.ShowAllParameters}\n" +
                 $"     Show net parameters                 : {commands.ShowNetParameters}\n" +
                 $"     Show trainer parameters             : {commands.ShowTrainerParameters}\n" +
                 $"     Show sample set parameters          : {commands.ShowSampleSetParameters}\n\n" +
-                                                           
+
+                $"     Change parameter                          : {commands.ChangeParameter} [optional: layer id] [parameter name] [optional: :parameter value]\n" +
+                $"     Example 1 (Add a new layer after layer 0) : {commands.ChangeParameter} 0 add\n" +
+                $"     Example 2 (Set the global WeightMax 1)    : {commands.ChangeParameter} wMax:1\n" +
+                $"     Example 3 (Set BiasMin of layer 3 to 2)   : {commands.ChangeParameter} bMin:2\n" +
+                $"     Parameter Names                           : {parameters.ParameterNames.Values.ToStringFromCollection()}\n\n" +
+
                 $"     Deactivate logging                  : {commands.Unlog}\n" +
                 $"     Start test training                 : {commands.TestTraining}\n" +
                 $"     Start training                      : {commands.Train}\n\n");
+        }
+        private static void ShowAllParameters()
+        {
+            ShowSampleSetParameters();
+            ShowSampleSetParameters();
+            ShowTrainerParameters();
         }
         private static void ShowNetParameters()
         {
@@ -262,7 +302,7 @@ namespace NeuralNetBuilderAPI
             
             foreach (var lp in parameters.NetParameters.LayerParametersCollection)
             {
-                Console.WriteLine($"\n     Layer {lp.Id}: N={lp.NeuronsPerLayer}, wMin={lp.WeightMin}/wMax={lp.WeightMax}, bMin={lp.BiasMin}/bMax={lp.BiasMax}, Act={lp.ActivationType}");
+                Console.WriteLine($"\n     Layer {lp.Id}: N = {lp.NeuronsPerLayer}, wMin/wMax = {lp.WeightMin}/{lp.WeightMax}, bMin/bMax = {lp.BiasMin}/{lp.BiasMax}, Activation = {lp.ActivationType}");
             }
 
             Console.WriteLine();
@@ -345,7 +385,21 @@ namespace NeuralNetBuilderAPI
 
             try
             {
-                if (!consoleInput.Contains('=') && !consoleInput.Contains(':'))
+                if(string.Equals(new string(consoleInput.Take(commands.ChangeParameter.Length).ToArray()), commands.ChangeParameter))
+                {
+                    SetCommandAndLayerId(consoleInput, ref command, ref layerId);
+                    var partialString = consoleInput.Remove(0, commands.ChangeParameter.Length + layerId.Length + 1);
+                    if (partialString.Contains(':'))
+                    {
+                        paramName = partialString.Split(':').First();
+                        paramValue = partialString.Split(':').Last();
+                    }
+                    else 
+                    {
+                        paramName = partialString;
+                    }
+                }
+                else if (!consoleInput.Contains('=') && !consoleInput.Contains(':'))
                 {
                     command = consoleInput;
                 }
@@ -364,15 +418,9 @@ namespace NeuralNetBuilderAPI
                         throw new ArgumentException("No more than one ':' allowed per command!");
 
                     var tmp = consoleInput.Split(':');
-                    command = commands.ChangeANetParameter;
+                    command = commands.ChangeParameter;
                     paramName = tmp.First();
                     paramValue = tmp.Last();
-
-                    if (command.Contains(nameof(commands.ChangeALayerParameter)))
-                    {
-                        layerId = command.Substring(0, nameof(commands.ChangeALayerParameter).Length);
-                        command.Replace(layerId, "");
-                    }
                 }
                 else if (consoleInput.Contains('=') && consoleInput.Contains(':'))
                 {
@@ -386,6 +434,12 @@ namespace NeuralNetBuilderAPI
             }
 
             return true;
+        }
+        private static void SetCommandAndLayerId(string consoleInput, ref string command, ref string layerId)
+        {
+            // Get the word after the first space in the command string (ie after commands.ChangeParameter)
+            command = commands.ChangeParameter;
+            layerId = consoleInput.Split(' ').ElementAt(1);
         }
 
         #endregion
