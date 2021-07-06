@@ -66,10 +66,12 @@ namespace NeuralNetBuilderAPI
         public string CreateNetParameters { get; } = "create net -p";
         public string CreateTrainerParameters { get; } = "create trainer -p";
         public string CreateSampleSetParameters { get; } = "create samples -p";
+        public string CreateSamplesNetAndTrainer { get; } = "create";
         public string CreateNet { get; } = "create net";
         public string CreateTrainer { get; } = "create trainer";
         public string CreateSampleSet { get; } = "create samples";
 
+        public string LoadSamplesNetAndTrainer { get; } = "load";
         public string LoadInitializedNet { get; } = "load net -0";
         public string LoadTrainedNet { get; } = "load net -1";
         public string LoadSampleSet { get; } = "load samples";
@@ -78,6 +80,7 @@ namespace NeuralNetBuilderAPI
         public string LoadTrainerParameters { get; } = "load trainer -p";
         public string LoadSampleSetParameters { get; } = "load samples -p";
 
+        public string SaveSamplesNetAndTrainer { get; } = "save";
         public string SaveAllParameters { get; } = "save -p";
         public string SaveNetParameters { get; } = "save net -p";
         public string SaveTrainerParameters { get; } = "save trainer -p";

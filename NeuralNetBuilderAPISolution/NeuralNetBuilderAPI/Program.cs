@@ -1,4 +1,6 @@
-﻿using NeuralNetBuilder;
+﻿using DeepLearningDataProvider;
+using DeepLearningDataProvider.Builders;
+using NeuralNetBuilder;
 using NeuralNetBuilder.Builders;
 using System;
 using System.Diagnostics;
@@ -11,13 +13,19 @@ namespace NeuralNetBuilderAPI
     {
         #region fields
 
-        private static Initializer initializer;
+        private static NeuralNetBuilder.Initializer initializer;
+        private static NeuralNetBuilder.Builders.PathBuilder pathBuilder;
+        private static ParameterBuilder paramBuilder;
+
+        private static DeepLearningDataProvider.Initializer samplesInitializer;
+        private static DeepLearningDataProvider.Builders.PathBuilder samplesPathBuilder;
+        private static SampleSetParameterBuilder sampleParamBuilder;
+
         private static Stopwatch stopwatch = new Stopwatch();
-        private static PathBuilder paths;
-        private static ParameterBuilder parameters;
         private static CommandNames commands;
         private static string commandsPath = AppDomain.CurrentDomain.BaseDirectory + @"\CommandNames.txt";
         private static bool isInitializerStatusChangedEventActive = true;
+        private static bool isDataProviderChangedEventActive = true;
 
         #endregion
 
@@ -25,13 +33,19 @@ namespace NeuralNetBuilderAPI
 
         static async Task Main(string[] args)
         {
-            initializer = new Initializer();
-            initializer.InitializerStatusChanged += Initializer_StatusChanged_EventHandlingMethod;
-            paths = initializer.Paths;
-            parameters = initializer.Parameters;
+            initializer = new NeuralNetBuilder.Initializer();
+            initializer.InitializerStatusChanged += NetbuilderChanged_EventHandlingMethod;
+            pathBuilder = initializer.Paths;
+            paramBuilder = initializer.ParameterBuilder;
+
+            samplesInitializer = new DeepLearningDataProvider.Initializer();
+            samplesInitializer.DataProviderChanged += DataProviderChanged_EventHandlingMethod;
+            samplesPathBuilder = samplesInitializer.PathBuilder;
+            sampleParamBuilder = samplesInitializer.ParameterBuilder;
+
             commands = CommandNames.GetDefaultCommandNames();
 
-            paths.ResetPaths();
+            pathBuilder.ResetPaths();
             ShowHelp();
             ShowSettings();
 
@@ -40,6 +54,7 @@ namespace NeuralNetBuilderAPI
 
         private static async Task ExecuteConsoleCommands()
         {
+            Console.WriteLine();
             string consoleInput = Console.ReadLine();
             
             AnalyzeInput(consoleInput, out string enteredCommand, out string enteredPath, out string enteredParameterName, out string enteredParameterValue, out string layerId);
@@ -66,32 +81,38 @@ namespace NeuralNetBuilderAPI
                 #region Load
 
                 else if (enteredCommand == commands.LoadAllParameters)
-                    await parameters.LoadAllParametersAsync();
-                else if (enteredCommand == commands.LoadNetParameters)
-                    await parameters.LoadNetParametersAsync();
-                else if (enteredCommand == commands.LoadTrainerParameters)
-                    await parameters.LoadTrainerParametersAsync();
+                    await LoadAllParametersAsync();
                 else if (enteredCommand == commands.LoadSampleSetParameters)
-                    await parameters.LoadSampleSetParametersAsync();
+                    await sampleParamBuilder.LoadSampleSetParametersAsync();
+                else if (enteredCommand == commands.LoadNetParameters)
+                    await paramBuilder.LoadNetParametersAsync();
+                else if (enteredCommand == commands.LoadTrainerParameters)
+                    await paramBuilder.LoadTrainerParametersAsync();
+                else if (enteredCommand == commands.LoadSamplesNetAndTrainer)
+                    await LoadSamplesNetAndTrainerAsync();
+                else if (enteredCommand == commands.LoadSampleSet)
+                    await samplesInitializer.LoadSampleSetAsync();
                 else if (enteredCommand == commands.LoadInitializedNet)
                     await initializer.LoadInitializedNetAsync();
                 else if (enteredCommand == commands.LoadTrainedNet)
                     await initializer.LoadTrainedNetAsync();
-                else if (enteredCommand == commands.LoadSampleSet)
-                    await initializer.LoadSampleSetAsync();
 
                 #endregion
 
                 #region Create
 
-                else if (enteredCommand == commands.CreateSampleSetParameters)
-                    parameters.CreateSampleSetParameters(enteredParameterValue);
-                else if (enteredCommand == commands.CreateNetParameters)
-                    parameters.CreateNetParameters();
-                else if (enteredCommand == commands.CreateTrainerParameters)
-                    parameters.CreateTrainerParameters();
                 else if (enteredCommand == commands.CreateAllParameters)
-                    parameters.CreateAllParameters();
+                    CreateAllParameters(enteredParameterValue);
+                else if (enteredCommand == commands.CreateSampleSetParameters)
+                    sampleParamBuilder.CreateSampleSetParameters(enteredParameterValue);
+                else if (enteredCommand == commands.CreateNetParameters)
+                    paramBuilder.CreateNetParameters();
+                else if (enteredCommand == commands.CreateTrainerParameters)
+                    paramBuilder.CreateTrainerParameters();
+                else if (enteredCommand == commands.CreateSamplesNetAndTrainer)
+                    await CreateSamplesNetAndTrainerAsync();
+                else if (enteredCommand == commands.CreateSampleSet)
+                    await samplesInitializer.CreateSampleSetAsync();
                 else if (enteredCommand == commands.CreateNet)
                     await initializer.CreateNetAsync();
                 else if (enteredCommand == commands.CreateTrainer)
@@ -99,34 +120,37 @@ namespace NeuralNetBuilderAPI
                     if (await initializer.CreateTrainerAsync())
                         initializer.Trainer.TrainerStatusChanged += Trainer_StatusChanged_EventHandlingMethod;
                 }
-                else if (enteredCommand == commands.CreateSampleSet)
-                    await initializer.CreateSampleSetAsync();
 
                 #endregion
 
                 #region Save
 
                 else if (enteredCommand == commands.SaveAllParameters)
-                    await parameters.SaveAllParametersAsync();
+                    await SaveAllParametersAsync();
                 else if (enteredCommand == commands.SaveSampleSetParameters)
-                    await parameters.SaveSampleSetParametersAsync();
+                    await sampleParamBuilder.SaveSampleSetParametersAsync();
                 else if (enteredCommand == commands.SaveNetParameters)
-                    await parameters.SaveNetParametersAsync();
+                    await paramBuilder.SaveNetParametersAsync();
                 else if (enteredCommand == commands.SaveTrainerParameters)
-                    await parameters.SaveTrainerParametersAsync();
+                    await paramBuilder.SaveTrainerParametersAsync();
+                else if (enteredCommand == commands.SaveSamplesNetAndTrainer)
+                    await SaveSamplesNetAndTrainerAsync();
+                else if (enteredCommand == commands.SaveSampleSet)
+                    await samplesInitializer.SaveSampleSetAsync();
                 else if (enteredCommand == commands.SaveInitializedNet)
                     await initializer.SaveInitializedNetAsync();
                 else if (enteredCommand == commands.SaveTrainedNet)
                     await initializer.SaveTrainedNetAsync();
-                else if (enteredCommand == commands.SaveSampleSet)
-                    await initializer.SaveSampleSetAsync();
 
                 #endregion
 
                 #region Change parameter
 
                 else if (enteredCommand == commands.ChangeParameter)
-                    parameters.ChangeParameter(enteredParameterName, enteredParameterValue, layerId);
+                {
+                    sampleParamBuilder.ChangeParameter(enteredParameterName, enteredParameterValue);
+                    paramBuilder.ChangeParameter(enteredParameterName, enteredParameterValue, layerId);
+                }
 
                 #endregion
 
@@ -141,9 +165,9 @@ namespace NeuralNetBuilderAPI
                 else if (enteredCommand == commands.Train)
                     await TrainAsync();
                 else if (enteredCommand == commands.ResetPaths)
-                    paths.ResetPaths();
+                    pathBuilder.ResetPaths();
                 else if (enteredCommand == commands.UseGeneralPathAndDefaultNames)
-                    paths.UseGeneralPathAndDefaultNames();
+                    pathBuilder.UseGeneralPathAndDefaultNames();
 
                 else
                     Console.WriteLine("Unkown Command.");
@@ -155,31 +179,99 @@ namespace NeuralNetBuilderAPI
                 #region Set path
 
                 if (enteredCommand == commands.SetGeneralPath)
-                    paths.SetGeneralPath(enteredPath);
+                    pathBuilder.SetGeneralPath(enteredPath);
                 else if (enteredCommand == commands.SetFileNamePrefix)
-                    paths.SetFileNamePrefix(enteredPath);
+                    pathBuilder.SetFileNamePrefix(enteredPath);
                 else if (enteredCommand == commands.SetFileNameSuffix)
-                    paths.SetFileNameSuffix(enteredPath);
+                    pathBuilder.SetFileNameSuffix(enteredPath);
                 else if (enteredCommand == commands.SetNetParametersPath)
-                    paths.SetNetParametersPath(enteredPath);
+                    pathBuilder.SetNetParametersPath(enteredPath);
                 else if (enteredCommand == commands.SetNetParametersPath)
-                    paths.SetNetParametersPath(enteredPath);
+                    pathBuilder.SetNetParametersPath(enteredPath);
                 else if (enteredCommand == commands.SetSampleSetParametersPath)
-                    paths.SetSampleSetParametersPath(enteredPath);
+                    samplesPathBuilder.SetSampleSetParametersPath(enteredPath);
                 else if (enteredCommand == commands.SetInitializedNetPath)
-                    paths.SetInitializedNetPath(enteredPath);
+                    pathBuilder.SetInitializedNetPath(enteredPath);
                 else if (enteredCommand == commands.SetTrainedNetPath)
-                    paths.SetTrainedNetPath(enteredPath);
+                    pathBuilder.SetTrainedNetPath(enteredPath);
                 else if (enteredCommand == commands.SetLogPath)
-                    paths.SetLogPath(enteredPath);
+                    pathBuilder.SetLogPath(enteredPath);
                 else if (enteredCommand == commands.SetSampleSetPath)
-                    paths.SetSampleSetPath(enteredPath);
+                    samplesPathBuilder.SetSampleSetPath(enteredPath);
 
                 #endregion
             }
 
             await ExecuteConsoleCommands();
         }
+
+        #region combining methods
+
+        public static async Task<bool> CreateSamplesNetAndTrainerAsync()
+        {
+            if (await samplesInitializer.CreateSampleSetAsync() == false)
+                return false;
+            if (await initializer.CreateNetAsync() == false)
+                return false;
+            if (await initializer.CreateTrainerAsync() == false)
+                return false;
+
+            return true;
+        }
+        public static bool CreateAllParameters(string templateName)
+        {
+            if (sampleParamBuilder.CreateSampleSetParameters(templateName) == false)
+                return false;
+
+            paramBuilder.CreateNetParameters();
+            paramBuilder.CreateTrainerParameters();
+
+            return true;
+        }
+        public static async Task<bool> LoadAllParametersAsync()
+        {
+            bool result = true;
+
+            if (await sampleParamBuilder.LoadSampleSetParametersAsync() == false) result = false;
+            if (await paramBuilder.LoadNetParametersAsync() == false) result = false;
+            if (await paramBuilder.LoadTrainerParametersAsync() == false) result = false;
+
+            return result;
+        }
+        public static async Task<bool> SaveAllParametersAsync()
+        {
+            bool result = true;
+
+            if (await sampleParamBuilder.SaveSampleSetParametersAsync() == false) result = false;
+            if (await paramBuilder.SaveNetParametersAsync() == false) result = false;
+            if (await paramBuilder.SaveTrainerParametersAsync() == false) result = false;
+
+            return result;
+        }
+        public static async Task<bool> SaveSamplesNetAndTrainerAsync() // incl trained net but no trainer
+        {
+            if (await samplesInitializer.SaveSampleSetAsync() == false)
+                return false;
+            if (await initializer.SaveInitializedNetAsync() == false)
+                return false;
+            if (await initializer.SaveTrainedNetAsync() == false)
+                return false;
+
+            return true;
+        }
+        public static async Task<bool> LoadSamplesNetAndTrainerAsync() // incl trained net but no trainer
+        {
+            if (await samplesInitializer.LoadSampleSetAsync() == false)
+                return false;
+            if (await initializer.LoadInitializedNetAsync() == false)
+                return false;
+            if (await initializer.LoadTrainedNetAsync() == false)
+                return false;
+
+            return true;
+        }
+
+        #endregion
 
         private static async Task TrainAsync()
         {
@@ -199,26 +291,26 @@ namespace NeuralNetBuilderAPI
 
             Console.WriteLine("\n" +
                 $"     Current Settings:\n\n" +
-                $"     General path    : {(paths.General == default ? " - " : paths.General)}\n" +
-                $"     General prefix  : {(paths.FileName_Prefix == default ? " - " : paths.FileName_Prefix)}\n" +
-                $"     General suffix  : {(paths.FileName_Suffix == default ? " - " : paths.FileName_Suffix)}\n\n" +
+                $"     General path    : {(pathBuilder.General == default ? " - " : pathBuilder.General)}\n" +
+                $"     General prefix  : {(pathBuilder.FileName_Prefix == default ? " - " : pathBuilder.FileName_Prefix)}\n" +
+                $"     General suffix  : {(pathBuilder.FileName_Suffix == default ? " - " : pathBuilder.FileName_Suffix)}\n\n" +
 
-                $"     Path to sample set parameters    : {(paths.SampleSetParameters == default ? " - " : paths.SampleSetParameters)}\n" +
-                $"     Path to net parameters           : {(paths.NetParameters == default ? " - " : paths.NetParameters)}\n" +
-                $"     Path to trainer parameters       : {(paths.TrainerParameters == default ? " - " : paths.TrainerParameters)}\n" +
-                $"     Path to sample set               : {(paths.SampleSet == default ? " - " : paths.SampleSet)}\n" +
-                $"     Path to initialized net          : {(paths.InitializedNet == default ? " - " : paths.InitializedNet)}\n" +
-                $"     Path to trained net              : {(paths.TrainedNet == default ? " - " : paths.TrainedNet)}\n" +
-                $"     Path to log file                 : {(paths.Log == default ? " - " : paths.Log)}\n\n" +
+                $"     Path to sample set parameters    : {(samplesPathBuilder.SampleSetParameters == default ? " - " : samplesPathBuilder.SampleSetParameters)}\n" +
+                $"     Path to net parameters           : {(pathBuilder.NetParameters == default ? " - " : pathBuilder.NetParameters)}\n" +
+                $"     Path to trainer parameters       : {(pathBuilder.TrainerParameters == default ? " - " : pathBuilder.TrainerParameters)}\n" +
+                $"     Path to sample set               : {(samplesPathBuilder.SampleSet == default ? " - " : samplesPathBuilder.SampleSet)}\n" +
+                $"     Path to initialized net          : {(pathBuilder.InitializedNet == default ? " - " : pathBuilder.InitializedNet)}\n" +
+                $"     Path to trained net              : {(pathBuilder.TrainedNet == default ? " - " : pathBuilder.TrainedNet)}\n" +
+                $"     Path to log file                 : {(pathBuilder.Log == default ? " - " : pathBuilder.Log)}\n\n" +
 
-                $"     Sample Set Parameters : {(parameters.SampleSetParameters == null ? " - " : $"set (Name: {parameters.SampleSetParameters.Name})")}\n" +
-                $"     Net Parameters        : {(parameters.NetParameters == null ? " - " : "set")}\n" + 
-                $"     Trainer Parameters    : {(parameters.TrainerParameters == null ? " - " : "set")}\n" +
+                $"     Sample Set Parameters : {(sampleParamBuilder.Parameters == null ? " - " : $"set (Name: {sampleParamBuilder.Parameters.Name})")}\n" +
+                $"     Net Parameters        : {(paramBuilder.NetParameters == null ? " - " : "set")}\n" + 
+                $"     Trainer Parameters    : {(paramBuilder.TrainerParameters == null ? " - " : "set")}\n" +
                 $"     Sample Set            : {(initializer.SampleSet == null ? " - " : "set")}\n" +
                 $"     Net                   : {(initializer.Net == null ? " - " : "set")}\n" + 
                 $"     Trainer               : {(initializer.Trainer == null ? " - " : "set")}\n\n" +
 
-                $"     Available sample set templates: {parameters.SampleSetTemplates.ToStringFromCollection()}\n" +
+                $"     Available sample set templates: {sampleParamBuilder.DefaultParameters.ToStringFromCollection()}\n" +
                 $"     Logging is {(initializer.IsLogged ? "on." : "off.")}\n\n");
 
             // Reactivate the event handling method again.
@@ -246,9 +338,10 @@ namespace NeuralNetBuilderAPI
                 $"     Load sample set parameters          : {commands.LoadSampleSetParameters}\n" +
                 $"     Load net parameters                 : {commands.LoadNetParameters}\n" +
                 $"     Load trainer parameters             : {commands.LoadTrainerParameters}\n" +
+                $"     Load sample set, net & trainer      : {commands.LoadSamplesNetAndTrainer}\n" +
+                $"     Load sample set                     : {commands.LoadSampleSet}\n" +
                 $"     Load initialized net                : {commands.LoadInitializedNet}\n" +
-                $"     Load trained net                    : {commands.LoadTrainedNet}\n" +
-                $"     Load sample set                     : {commands.LoadSampleSet}\n\n" +
+                $"     Load trained net                    : {commands.LoadTrainedNet}\n\n" +
 
                 // Implement/Check optionality
                 $"     Create all parameters               : {commands.CreateAllParameters} [optional: template name]\n" +
@@ -256,6 +349,7 @@ namespace NeuralNetBuilderAPI
                 $"     Create named sample set parameters  : {commands.CreateSampleSetParameters} [template name]\n" +
                 $"     Create the net parameters           : {commands.CreateNetParameters}\n" +
                 $"     Create the trainer parameters       : {commands.CreateTrainerParameters}\n" +
+                $"     Create sample set, net & trainer    : {commands.CreateSamplesNetAndTrainer}\n" +
                 $"     Create sample set                   : {commands.CreateSampleSet}\n" +
                 $"     Create the net                      : {commands.CreateNet}\n" +
                 $"     Create the trainer                  : {commands.CreateTrainer}\n\n" +
@@ -264,6 +358,7 @@ namespace NeuralNetBuilderAPI
                 $"     Save sample set parameters          : {commands.SaveSampleSetParameters}\n" +
                 $"     Save net parameters                 : {commands.SaveNetParameters}\n" +
                 $"     Save trainer parameters             : {commands.SaveTrainerParameters}\n" +
+                $"     Save sample set, net & trainer      : {commands.SaveSamplesNetAndTrainer}\n" +
                 $"     Save sample set                     : {commands.SaveSampleSet}\n" +
                 $"     Save initialized net                : {commands.SaveInitializedNet}\n" +
                 $"     Save trained net                    : {commands.SaveTrainedNet}\n\n" +
@@ -279,7 +374,7 @@ namespace NeuralNetBuilderAPI
                 $"     Example 1 (Add a new layer after layer 0) : {commands.ChangeParameter} 0 add\n" +
                 $"     Example 2 (Set the global WeightMax 1)    : {commands.ChangeParameter} wMax:1\n" +
                 $"     Example 3 (Set BiasMin of layer 3 to 2)   : {commands.ChangeParameter} bMin:2\n" +
-                $"     Parameter Names                           : {parameters.ParameterNames.Values.ToStringFromCollection()}\n\n" +
+                $"     Parameter Names                           : {paramBuilder.ParameterNames.Values.ToStringFromCollection()}\n\n" +
 
                 $"     Deactivate logging                  : {commands.Unlog}\n" +
                 $"     Start test training                 : {commands.TestTraining}\n" +
@@ -293,14 +388,14 @@ namespace NeuralNetBuilderAPI
         }
         private static void ShowNetParameters()
         {
-            if (parameters.NetParameters == null || parameters.LayerParametersCollection == null)   // Always create (empty or default?) LayerParametersCollection when creating NetParameters! That also lets you remove the 2nd check here'!
+            if (paramBuilder.NetParameters == null || paramBuilder.LayerParametersCollection == null)   // Always create (empty or default?) LayerParametersCollection when creating NetParameters! That also lets you remove the 2nd check here'!
                 return;
 
             Console.WriteLine("\n" +
-                $"     Layers         : {parameters.LayerParametersCollection.Count}\n" +
-                $"     WeightInitType : {parameters.NetParameters.WeightInitType}\n");
+                $"     Layers         : {paramBuilder.LayerParametersCollection.Count}\n" +
+                $"     WeightInitType : {paramBuilder.NetParameters.WeightInitType}\n");
             
-            foreach (var lp in parameters.NetParameters.LayerParametersCollection)
+            foreach (var lp in paramBuilder.NetParameters.LayerParametersCollection)
             {
                 Console.WriteLine($"\n     Layer {lp.Id}: N = {lp.NeuronsPerLayer}, wMin/wMax = {lp.WeightMin}/{lp.WeightMax}, bMin/bMax = {lp.BiasMin}/{lp.BiasMax}, Activation = {lp.ActivationType}");
             }
@@ -309,29 +404,29 @@ namespace NeuralNetBuilderAPI
         }
         private static void ShowTrainerParameters()
         {
-            if (parameters.TrainerParameters == null)
+            if (paramBuilder.TrainerParameters == null)
                 return;
 
             Console.WriteLine("\n" +
-                $"     Learning Rate        : {parameters.TrainerParameters.LearningRate}\n" +
-                $"     Learning Rate Change : {parameters.TrainerParameters.LearningRateChange}\n" +
-                $"     Epochs               : {parameters.TrainerParameters.Epochs}\n" +
-                $"     Cost Type            : {parameters.TrainerParameters.CostType}\n\n");
+                $"     Learning Rate        : {paramBuilder.TrainerParameters.LearningRate}\n" +
+                $"     Learning Rate Change : {paramBuilder.TrainerParameters.LearningRateChange}\n" +
+                $"     Epochs               : {paramBuilder.TrainerParameters.Epochs}\n" +
+                $"     Cost Type            : {paramBuilder.TrainerParameters.CostType}\n\n");
         }
         private static void ShowSampleSetParameters()
         {
-            if (parameters.SampleSetParameters == null)
+            if (sampleParamBuilder.Parameters == null)
                 return;
 
             Console.WriteLine("\n" +
-                $"     Name                                : {parameters.SampleSetParameters.Name}\n" +
-                $"     DefaultTestingSamples               : {parameters.SampleSetParameters.AllTestingSamples}\n" +
-                $"     DefaultTrainingSamples              : {parameters.SampleSetParameters.AllTrainingSamples}\n" +
-                $"     TestingSamples                      : {parameters.SampleSetParameters.TestingSamples}\n" +
-                $"     TrainingSamples                     : {parameters.SampleSetParameters.TrainingSamples}\n" +
-                $"     InputDistortion                     : {parameters.SampleSetParameters.InputDistortion}\n" +
-                $"     TargetTolerance                     : {parameters.SampleSetParameters.TargetTolerance}\n");
-            foreach (var path in parameters.SampleSetParameters.Paths)   // Always create (empty or default?) SampleSetParameters.Paths when creating SampleSetParameters!
+                $"     Name                                : {sampleParamBuilder.Parameters.Name}\n" +
+                $"     DefaultTestingSamples               : {sampleParamBuilder.Parameters.AllTestingSamples}\n" +
+                $"     DefaultTrainingSamples              : {sampleParamBuilder.Parameters.AllTrainingSamples}\n" +
+                $"     TestingSamples                      : {sampleParamBuilder.Parameters.TestingSamples}\n" +
+                $"     TrainingSamples                     : {sampleParamBuilder.Parameters.TrainingSamples}\n" +
+                $"     InputDistortion                     : {sampleParamBuilder.Parameters.InputDistortion}\n" +
+                $"     TargetTolerance                     : {sampleParamBuilder.Parameters.TargetTolerance}\n");
+            foreach (var path in sampleParamBuilder.Parameters.Paths)   // Always create (empty or default?) SampleSetParameters.Paths when creating SampleSetParameters!
             {
                 Console.WriteLine($"     {path.Key, -20}: {path.Value}");
             }
@@ -350,19 +445,19 @@ namespace NeuralNetBuilderAPI
         }
         private async static Task TestTraining()
         {
-            paths.General = @"C:\Users\Jan_PC\Documents\_NeuralNetApp\Saves\";
-            paths.FileName_Prefix = @"Test\";
-            paths.FileName_Suffix = "_test.txt";
-            paths.ResetPaths();
+            pathBuilder.General = @"C:\Users\Jan_PC\Documents\_NeuralNetApp\Saves\";
+            pathBuilder.FileName_Prefix = @"Test\";
+            pathBuilder.FileName_Suffix = "_test.txt";
+            pathBuilder.ResetPaths();
 
-            if (!await parameters.LoadNetParametersAsync())
+            if (!await paramBuilder.LoadNetParametersAsync())
                 return;
-            if (!await parameters.LoadTrainerParametersAsync())
+            if (!await paramBuilder.LoadTrainerParametersAsync())
                 return;
             if (!await initializer.LoadInitializedNetAsync())
                 return;        // Always check if the loaded initialized net suits loaded parameters!
 
-            if (!await initializer.LoadSampleSetAsync())
+            if (!await samplesInitializer.LoadSampleSetAsync())
                 return;             // Always check if the loaded sample set suits the ... parameters!
             if (!await initializer.CreateNetAsync())
                 return;
@@ -448,9 +543,13 @@ namespace NeuralNetBuilderAPI
 
         #region event handling methods
 
-        private static void Initializer_StatusChanged_EventHandlingMethod(object initializer, InitializerStatusChangedEventArgs e)
+        private static void NetbuilderChanged_EventHandlingMethod(object initializer, InitializerStatusChangedEventArgs e)
         {
             if(isInitializerStatusChangedEventActive)
+                Console.WriteLine($"{e.Info}");
+        }private static void DataProviderChanged_EventHandlingMethod(object initializer, DataProviderChangedEventArgs e)
+        {
+            if(isDataProviderChangedEventActive)
                 Console.WriteLine($"{e.Info}");
         }
         private static void Trainer_StatusChanged_EventHandlingMethod(object trainer, TrainerStatusChangedEventArgs e)
