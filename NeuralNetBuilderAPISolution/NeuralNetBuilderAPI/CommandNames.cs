@@ -52,7 +52,7 @@ namespace NeuralNetBuilderAPI
         public string SetSampleSetPath { get; } = "path samples";
         public string SetNetParametersPath { get; } = "path net -p";
         public string SetTrainerParametersPath { get; } = "path trainer -p";
-        public string SetSampleSetParametersPath { get; } = "path samples -p";
+        //public string SetSampleSetParametersPath { get; } = "path samples -p";
         public string SetLogPath { get; } = "path log";
         
         public string ShowHelp { get; } = "show help";
@@ -60,12 +60,12 @@ namespace NeuralNetBuilderAPI
         public string ShowAllParameters { get; } = "show -p";
         public string ShowNetParameters { get; } = "show net -p";
         public string ShowTrainerParameters { get; } = "show trainer -p";
-        public string ShowSampleSetParameters { get; } = "show samples -p";
+        //public string ShowSampleSetParameters { get; } = "show samples -p";
 
         public string CreateAllParameters { get; } = "create -p";
         public string CreateNetParameters { get; } = "create net -p";
         public string CreateTrainerParameters { get; } = "create trainer -p";
-        public string CreateSampleSetParameters { get; } = "create samples -p";
+        //public string CreateSampleSetParameters { get; } = "create samples -p";
         public string CreateSamplesNetAndTrainer { get; } = "create";
         public string CreateNet { get; } = "create net";
         public string CreateTrainer { get; } = "create trainer";
@@ -78,13 +78,13 @@ namespace NeuralNetBuilderAPI
         public string LoadAllParameters { get; } = "load -p";
         public string LoadNetParameters { get; } = "load net -p";
         public string LoadTrainerParameters { get; } = "load trainer -p";
-        public string LoadSampleSetParameters { get; } = "load samples -p";
+        //public string LoadSampleSetParameters { get; } = "load samples -p";
 
         public string SaveSamplesNetAndTrainer { get; } = "save";
         public string SaveAllParameters { get; } = "save -p";
         public string SaveNetParameters { get; } = "save net -p";
         public string SaveTrainerParameters { get; } = "save trainer -p";
-        public string SaveSampleSetParameters { get; } = "save samples -p";
+        //public string SaveSampleSetParameters { get; } = "save samples -p";
         public string SaveInitializedNet { get; } = "save net -0";
         public string SaveTrainedNet { get; } = "save net -1";
         public string SaveSampleSet { get; } = "save samples";
