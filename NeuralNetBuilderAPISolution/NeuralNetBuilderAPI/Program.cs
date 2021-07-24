@@ -18,7 +18,6 @@ namespace NeuralNetBuilderAPI
         private static NeuralNetBuilder.Builders.PathBuilder pathBuilder;
         private static ParameterBuilder paramBuilder;
 
-        private static DeepLearningDataProvider.Initializer samplesInitializer;
         private static DeepLearningDataProvider.Builders.PathBuilder samplesPathBuilder;
         //private static SampleSetParameterBuilder sampleParamBuilder;
 
@@ -36,15 +35,13 @@ namespace NeuralNetBuilderAPI
         {
             initializer = new NeuralNetBuilder.Initializer();
             initializer.InitializerStatusChanged += NetbuilderChanged_EventHandlingMethod;
-            pathBuilder = initializer.Paths;
-            
+            pathBuilder = initializer.Paths;            
             paramBuilder = initializer.ParameterBuilder;
 
-            samplesInitializer = new DeepLearningDataProvider.Initializer();
-            samplesInitializer.DataProviderChanged += DataProviderChanged_EventHandlingMethod;
-            samplesPathBuilder = samplesInitializer.PathBuilder;
+            initializer.SampleSet = new SampleSet();
+            initializer.SampleSet.DataProviderChanged += DataProviderChanged_EventHandlingMethod;
+            samplesPathBuilder = initializer.SampleSet.PathBuilder; // redundant?
             samplesPathBuilder.SetSampleSetPath(Path.Combine(@"C:\Users\Jan_PC\Desktop\FourPixCam\", "Samples.csv"));
-            //sampleParamBuilder = samplesInitializer.ParameterBuilder;
 
             commands = CommandNames.GetDefaultCommandNames();
 
@@ -94,8 +91,7 @@ namespace NeuralNetBuilderAPI
                 else if (enteredCommand == commands.LoadSamplesNetAndTrainer)
                     await LoadSamplesNetAndTrainerAsync();
                 else if (enteredCommand == commands.LoadSampleSet)
-                    await samplesInitializer.GetSampleSetAsync(samplesPathBuilder.SampleSet, .01f, 0);
-                    //await samplesInitializer.LoadSampleSetViaMLNetAsync(samplesPathBuilder.SampleSet, .01f, 0);    // Task: dynamize testSamplesFaction!
+                    await initializer.SampleSet.LoadSampleSetAsync(samplesPathBuilder.SampleSet, .01f, 0);  // Task: dynamize testSamplesFaction!
                 else if (enteredCommand == commands.LoadInitializedNet)
                     await initializer.LoadInitializedNetAsync();
                 else if (enteredCommand == commands.LoadTrainedNet)
@@ -121,7 +117,7 @@ namespace NeuralNetBuilderAPI
                     await initializer.CreateNetAsync();
                 else if (enteredCommand == commands.CreateTrainer)
                 {
-                    if (await initializer.CreateTrainerAsync(samplesInitializer.SampleSet))
+                    if (await initializer.CreateTrainerAsync(initializer.SampleSet))
                         initializer.Trainer.TrainerStatusChanged += Trainer_StatusChanged_EventHandlingMethod;
                 }
 
@@ -140,7 +136,7 @@ namespace NeuralNetBuilderAPI
                 else if (enteredCommand == commands.SaveSamplesNetAndTrainer)
                     await SaveSamplesNetAndTrainerAsync();
                 else if (enteredCommand == commands.SaveSampleSet)
-                    await samplesInitializer.SaveSampleSetAsync();
+                    await initializer.SampleSet.SaveSampleSetAsync();
                 else if (enteredCommand == commands.SaveInitializedNet)
                     await initializer.SaveInitializedNetAsync();
                 else if (enteredCommand == commands.SaveTrainedNet)
@@ -217,7 +213,7 @@ namespace NeuralNetBuilderAPI
             //    return false;
             if (await initializer.CreateNetAsync() == false)
                 return false;
-            if (await initializer.CreateTrainerAsync(samplesInitializer.SampleSet) == false)
+            if (await initializer.CreateTrainerAsync(initializer.SampleSet) == false)
                 return false;
 
             return true;
@@ -254,7 +250,7 @@ namespace NeuralNetBuilderAPI
         }
         public static async Task<bool> SaveSamplesNetAndTrainerAsync() // incl trained net but no trainer
         {
-            if (await samplesInitializer.SaveSampleSetAsync() == false)
+            if (await initializer.SampleSet.SaveSampleSetAsync() == false)
                 return false;
             if (await initializer.SaveInitializedNetAsync() == false)
                 return false;
@@ -265,7 +261,7 @@ namespace NeuralNetBuilderAPI
         }
         public static async Task<bool> LoadSamplesNetAndTrainerAsync() // incl trained net but no trainer
         {
-            if (await samplesInitializer.GetSampleSetAsync(samplesPathBuilder.SampleSet, .01f, 0) == false)
+            if (await initializer.SampleSet.LoadSampleSetAsync(samplesPathBuilder.SampleSet, .01f, 0) == false)
                 return false;
             if (await initializer.LoadInitializedNetAsync() == false)
                 return false;
@@ -281,7 +277,7 @@ namespace NeuralNetBuilderAPI
         {
             stopwatch.Reset();
             stopwatch.Start();
-            await initializer.TrainAsync(samplesInitializer.SampleSet);
+            await initializer.TrainAsync(initializer.SampleSet);
             stopwatch.Stop();
 
             await initializer.SaveTrainedNetAsync();
@@ -310,7 +306,7 @@ namespace NeuralNetBuilderAPI
                 //$"     Sample Set Parameters : {(sampleParamBuilder.Parameters == null ? " - " : $"set (Name: {sampleParamBuilder.Parameters.Name})")}\n" +
                 $"     Net Parameters        : {(paramBuilder.NetParameters == null ? " - " : "set")}\n" + 
                 $"     Trainer Parameters    : {(paramBuilder.TrainerParameters == null ? " - " : "set")}\n" +
-                $"     Sample Set            : {(samplesInitializer.SampleSet.TrainSet == null || samplesInitializer.SampleSet.TestSet == null ? " - " : "set")}\n" +
+                $"     Sample Set            : {(initializer.SampleSet.TrainSet == null || initializer.SampleSet.TestSet == null ? " - " : "set")}\n" +
                 $"     Net                   : {(initializer.Net == null ? " - " : "set")}\n" + 
                 $"     Trainer               : {(initializer.Trainer == null ? " - " : "set")}\n\n" +
 
@@ -461,11 +457,11 @@ namespace NeuralNetBuilderAPI
             if (!await initializer.LoadInitializedNetAsync())
                 return;        // Always check if the loaded initialized net suits loaded parameters!
 
-            if (!await samplesInitializer.GetSampleSetAsync(samplesPathBuilder.SampleSet, .01f, 0))
+            if (!await initializer.SampleSet.LoadSampleSetAsync(samplesPathBuilder.SampleSet, .01f, 0))
                 return;             // Always check if the loaded sample set suits the ... parameters!
             if (!await initializer.CreateNetAsync())
                 return;
-            if (!await initializer.CreateTrainerAsync(samplesInitializer.SampleSet))
+            if (!await initializer.CreateTrainerAsync(initializer.SampleSet))
                 return;
             initializer.Trainer.TrainerStatusChanged += Trainer_StatusChanged_EventHandlingMethod;
 
