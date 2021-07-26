@@ -355,17 +355,46 @@ namespace NeuralNetBuilderAPI
 
                 #region Change parameter
 
-                else if (mainCommand == MainCommand.p)
+                else if (mainCommand == MainCommand.param)
                 {
-                    ChangeParameterCommand changeParameterCommand = subCommand_String.ToEnum<ChangeParameterCommand>();
-                    //int layerId = int.Parse(layerId_String);
+                    ParameterCommand parameterCommand = subCommand_String.ToEnum<ParameterCommand>();
 
-                    switch (changeParameterCommand)
+                    switch (parameterCommand)
                     {
-                        case ChangeParameterCommand.set:
+                        case ParameterCommand.set:
                             paramBuilder.ChangeParameter(parameter, layerId);
                             break;
-                        case ChangeParameterCommand.add:
+                        //case ParameterCommand.add:
+                        //    paramBuilder.AddLayerAfter(layerId);
+                        //    break;
+                        default:
+                            break;
+                    }
+                }
+
+                #endregion
+
+                #region Change parameter
+
+                else if (mainCommand == MainCommand.layer)
+                {
+                    LayerCommand layerCommand = subCommand_String.ToEnum<LayerCommand>();
+
+                    switch (layerCommand)
+                    {
+                        //case LayerCommand.set:
+                        //    paramBuilder.ChangeParameter(parameter, layerId);
+                        //    break;
+                        case LayerCommand.add:
+                            paramBuilder.AddLayerAfter(layerId);
+                            break;
+                        case LayerCommand.del:
+                            paramBuilder.AddLayerAfter(layerId);
+                            break;
+                        case LayerCommand.left:
+                            paramBuilder.AddLayerAfter(layerId);
+                            break;
+                        case LayerCommand.right:
                             paramBuilder.AddLayerAfter(layerId);
                             break;
                         default:
@@ -470,6 +499,8 @@ namespace NeuralNetBuilderAPI
             await initializer.SaveTrainedNetAsync();
         }
 
+        #region Show methods
+
         private static void ShowSettings()
         {
             // Prevent double output about 'X' is null (from initlializer property) plus 'X' is unset here
@@ -502,7 +533,6 @@ namespace NeuralNetBuilderAPI
         }
         private static void ShowHelp()
         {
-            // wa load/save trainer?
             Console.WriteLine("\n" +
                 $"     General Input Format                      : [Main Command] [Sub Command] [opt: Parameter] [opt: Layer Id]\n\n" +
                 $"     All Commands: \n\n" +
@@ -519,7 +549,7 @@ namespace NeuralNetBuilderAPI
                 $"     Reset general path and use default names  : {MainCommand.path} {PathCommand.reset}\n\n" +
 
                 // Implement/Check optionality
-                $"     Create all parameters               : {MainCommand.create} {CreateCommand.par} [optional: template name]\n" +
+                $"     Create all parameters               : {MainCommand.create} {CreateCommand.par} [opt: template name]\n" +
                 $"     Create the net parameters           : {MainCommand.create} {CreateCommand.netpar}\n" +
                 $"     Create the trainer parameters       : {MainCommand.create} {CreateCommand.trainerpar}\n" +
                 $"     Create sample set, net & trainer    : {MainCommand.create} {CreateCommand.all}\n" +
@@ -548,13 +578,16 @@ namespace NeuralNetBuilderAPI
                 $"     Show all parameters                 : {MainCommand.show} {ShowCommand.par}\n" +
                 $"     Show net parameters                 : {MainCommand.show} {ShowCommand.netpar}\n" +
                 $"     Show trainer parameters             : {MainCommand.show} {ShowCommand.trainerpar}\n");
-                                                              
-            Console.WriteLine("\n" +                          
-                $"     Add layer after layer index               : {MainCommand.p} {ChangeParameterCommand.add} [preceding layer id]\n" +
-                $"     Example 1 (Add a new layer after layer 0) : {MainCommand.p} {ChangeParameterCommand.add} 0\n" +
-                $"     Change parameter                          : {MainCommand.p} {ChangeParameterCommand.set} [parameter name] [optional: :parameter value] [optional: layer id]\n" +
-                $"     Example 2 (Set the global WeightMax 1)    : {MainCommand.p} {ChangeParameterCommand.set} {ParameterName.wMax}:1 glob\n" + // global!
-                $"     Example 3 (Set BiasMin of layer 3 to 2)   : {MainCommand.p} {ChangeParameterCommand.set} {ParameterName.bMin}:2 3\n" +
+
+            Console.WriteLine("\n" +
+                $"     Change layer                              : {MainCommand.layer} [layer command] [opt: :parameter value] [opt: layer id]\n" +
+                $"     Add layer after layer index               : {MainCommand.layer} {LayerCommand.del} [preceding layer id]\n" +
+                $"     Example 1 (Add a new layer after layer 0) : {MainCommand.layer} {LayerCommand.left} L0\n\n");
+
+            Console.WriteLine("\n" +
+                $"     Change parameter                          : {MainCommand.param} [parameter command] [parameter name] [opt: :parameter value] [opt: layer id or 'glob']\n" +
+                $"     Example 2 (Set the global WeightMax 1)    : {MainCommand.param} {ParameterCommand.set} {ParameterName.wMax}:1 glob\n" + // global!
+                $"     Example 3 (Set BiasMin of layer 3 to 2)   : {MainCommand.param} {ParameterCommand.set} {ParameterName.bMin}:2 L3\n" +
                 $"     Parameter Names                           : {Enum.GetNames(typeof(ParameterName)).ToStringFromCollection()}\n\n");
 
             var activationTypes = Enum.GetNames(typeof(ActivationType));
@@ -563,7 +596,7 @@ namespace NeuralNetBuilderAPI
             for (int i = 0; i < activationTypes.Length; i++)
             {
                 Console.WriteLine(
-                $"     {activationTypes[i], -30}            : {MainCommand.p} {ChangeParameterCommand.set} act:{i} 3");
+                $"     {activationTypes[i], -30}            : {MainCommand.param} {ParameterCommand.set} act:{i} L3");
             }
             Console.WriteLine("\n" + 
                 $"     Activate logging                  : {MainCommand.logon}\n" +
@@ -578,10 +611,13 @@ namespace NeuralNetBuilderAPI
         }
         private static void ShowNetParameters()
         {
-            if (paramBuilder.NetParameters == null || paramBuilder.LayerParametersCollection == null)   // Always create (empty or default?) LayerParametersCollection when creating NetParameters! That also lets you remove the 2nd check here'!
+            if (paramBuilder.NetParameters == null)
+            {
+                Console.WriteLine("     Net parameters are not set yet.");
                 return;
+            }
 
-            Console.WriteLine("\n" +
+            Console.WriteLine(
                 $"     Layers         : {paramBuilder.LayerParametersCollection.Count}\n" +
                 $"     WeightInitType : {paramBuilder.NetParameters.WeightInitType}\n");
             
@@ -590,38 +626,26 @@ namespace NeuralNetBuilderAPI
                 Console.WriteLine($"     Layer {lp.Id}: N = {lp.NeuronsPerLayer}, weightRange = {lp.WeightMin}/{lp.WeightMax}, biasRange = {lp.BiasMin}/{lp.BiasMax}, Activation = {lp.ActivationType}");
             }
 
-            // Console.WriteLine();
+            Console.WriteLine();
         }
         private static void ShowTrainerParameters()
         {
             if (paramBuilder.TrainerParameters == null)
+            { 
+                Console.WriteLine("     Trainer parameters are not set yet.");
                 return;
+            }
 
-            Console.WriteLine("\n" +
+            Console.WriteLine(
                 $"     Learning Rate        : {paramBuilder.TrainerParameters.LearningRate}\n" +
                 $"     Learning Rate Change : {paramBuilder.TrainerParameters.LearningRateChange}\n" +
                 $"     Epochs               : {paramBuilder.TrainerParameters.Epochs}\n" +
                 $"     Cost Type            : {paramBuilder.TrainerParameters.CostType}\n");
-        }
-        //private static void ShowSampleSetParameters()
-        //{
-        //    if (sampleParamBuilder.Parameters == null)
-        //        return;
 
-        //    Console.WriteLine("\n" +
-        //        $"     Name                                : {sampleParamBuilder.Parameters.Name}\n" +
-        //        $"     DefaultTestingSamples               : {sampleParamBuilder.Parameters.AllTestingSamples}\n" +
-        //        $"     DefaultTrainingSamples              : {sampleParamBuilder.Parameters.AllTrainingSamples}\n" +
-        //        $"     TestingSamples                      : {sampleParamBuilder.Parameters.TestingSamples}\n" +
-        //        $"     TrainingSamples                     : {sampleParamBuilder.Parameters.TrainingSamples}\n" +
-        //        $"     InputDistortion                     : {sampleParamBuilder.Parameters.InputDistortion}\n" +
-        //        $"     TargetTolerance                     : {sampleParamBuilder.Parameters.TargetTolerance}\n");
-        //    foreach (var path in sampleParamBuilder.Parameters.Paths)   // Always create (empty or default?) SampleSetParameters.Paths when creating SampleSetParameters!
-        //    {
-        //        Console.WriteLine($"     {path.Key, -20}: {path.Value}");
-        //    }
-        //    Console.WriteLine();
-        //}
+            Console.WriteLine();
+        }
+
+        #endregion
 
         private static void Log()
         {
@@ -662,18 +686,17 @@ namespace NeuralNetBuilderAPI
 
         private static void AnalyzeInput(string consoleInput, out MainCommand mainCommand, out string subCommand_String, out string parameter, out int layerId)
         {
-            if (consoleInput.Length <= 1)
+            var splitInput = consoleInput.Split(' ');
+            if (splitInput.Length <= 1)
                 throw new ArgumentException("A console input must consist of at least two units: a main command and a sub command.");
 
-            var splitInput = consoleInput.Split(' ');
+            var inputHelpers = GetInputHelpers(splitInput.Skip(2));
+            var commandsAndParams = splitInput.Except(inputHelpers).ToArray();   // Exclude all InputHelpers!
 
             mainCommand = splitInput[0].ToEnum<MainCommand>();
             subCommand_String = splitInput[1];
-
-            var inputHelpers = GetInputHelpers(splitInput.Skip(2));
-            layerId = GetLayerId(inputHelpers);
-            var commandsAndParams = splitInput.Except(inputHelpers).ToArray();   // Exclude all InputHelpers!
             parameter = commandsAndParams.Last();
+            layerId = GetLayerId(inputHelpers);
 
             switch (mainCommand)
             {
@@ -702,8 +725,8 @@ namespace NeuralNetBuilderAPI
                     break;
                 case MainCommand.test:
                     break;
-                case MainCommand.p:
-                    subCommand_String = GetSubCommand<ChangeParameterCommand>(commandsAndParams[1]);
+                case MainCommand.param:
+                    subCommand_String = GetSubCommand<ParameterCommand>(commandsAndParams[1]);
                     break;
                 default:
                     break;
@@ -719,29 +742,33 @@ namespace NeuralNetBuilderAPI
             else
                 throw new ArgumentException($"SubCommand '{subCommand}' does not exist.");
         }
-        private static string GetParameterValue(string parameter)
-        {
-            if (parameter.Contains(':'))
-                return parameter.Split(':').Last();
-            else
-                return null;
-        }
+        //private static string GetParameterValue(string parameter)
+        //{
+        //    if (parameter.Contains(':'))
+        //        return parameter.Split(':').Last();
+        //    else
+        //        return null;
+        //}
         private static IEnumerable<string> GetInputHelpers(IEnumerable<string> consoleInputWithoutCommands)
         {
             var allInpHelpers = Enum.GetNames(typeof(InputHelper));
 
             var elementsStartingWithAnInputHelper = consoleInputWithoutCommands.Where(
-                x => allInpHelpers.Contains(x.First().ToString())
-                );
-            var elementsWithANumberAfterL = elementsStartingWithAnInputHelper.Skip(1).Where(x => int.Parse(x).GetType() == typeof(int)); ;
-            
-            return elementsWithANumberAfterL;
+                x => allInpHelpers.Contains(x.First().ToString()));
+
+            if (elementsStartingWithAnInputHelper.Count() == 0)
+                return new List<string>();
+
+            return elementsStartingWithAnInputHelper.Where(x => int.Parse(x.Skip(1).ToStringFromCollection()).GetType() == typeof(int));
         }
         private static int GetLayerId(IEnumerable<string> inputHelpers)
         {
             string onlyElementStartingWithL = inputHelpers.SingleOrDefault(x => string.Equals(x[0].ToString(), InputHelper.L.ToString()));
-            int layerId = int.Parse(onlyElementStartingWithL.Skip(1).ToString());
-            return layerId;
+            
+            if (onlyElementStartingWithL == null)
+                return -1;
+
+            return int.Parse(onlyElementStartingWithL.Skip(1).ToStringFromCollection());
         }
 
         #endregion
