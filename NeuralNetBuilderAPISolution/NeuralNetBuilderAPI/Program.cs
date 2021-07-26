@@ -2,14 +2,86 @@
 using NeuralNetBuilder;
 using NeuralNetBuilder.Builders;
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 
 namespace NeuralNetBuilderAPI
 {
     public class Program
     {
+        #region Fit Console Window
+
+        // https://stackoverflow.com/a/42334329/10547243
+
+        [DllImport("kernel32.dll")]
+        static extern IntPtr GetConsoleWindow();
+
+        [DllImport("user32.dll")]
+        static extern IntPtr MonitorFromWindow(IntPtr hwnd, uint dwFlags);
+
+        const int MONITOR_DEFAULTTOPRIMARY = 1;
+
+        [DllImport("user32.dll")]
+        static extern bool GetMonitorInfo(IntPtr hMonitor, ref MONITORINFO lpmi);
+
+        [StructLayout(LayoutKind.Sequential)]
+        struct MONITORINFO
+        {
+            public uint cbSize;
+            public RECT rcMonitor;
+            public RECT rcWork;
+            public uint dwFlags;
+            public static MONITORINFO Default
+            {
+                get { var inst = new MONITORINFO(); inst.cbSize = (uint)Marshal.SizeOf(inst); return inst; }
+            }
+        }
+
+        [StructLayout(LayoutKind.Sequential)]
+        struct RECT
+        {
+            public int Left, Top, Right, Bottom;
+        }
+
+        [StructLayout(LayoutKind.Sequential)]
+        struct POINT
+        {
+            public int x, y;
+        }
+
+        [DllImport("user32.dll", SetLastError = true)]
+        static extern bool GetWindowPlacement(IntPtr hWnd, ref WINDOWPLACEMENT lpwndpl);
+
+        [DllImport("user32.dll", SetLastError = true)]
+        static extern bool SetWindowPlacement(IntPtr hWnd, [In] ref WINDOWPLACEMENT lpwndpl);
+
+        const uint SW_RESTORE = 9;
+
+        [StructLayout(LayoutKind.Sequential)]
+        struct WINDOWPLACEMENT
+        {
+            public uint Length;
+            public uint Flags;
+            public uint ShowCmd;
+            public POINT MinPosition;
+            public POINT MaxPosition;
+            public RECT NormalPosition;
+            public static WINDOWPLACEMENT Default
+            {
+                get
+                {
+                    var instance = new WINDOWPLACEMENT();
+                    instance.Length = (uint)Marshal.SizeOf(instance);
+                    return instance;
+                }
+            }
+        }
+
+        #endregion
+
         #region fields
 
         private static Initializer initializer;
@@ -23,6 +95,7 @@ namespace NeuralNetBuilderAPI
         private static string commandsPath = AppDomain.CurrentDomain.BaseDirectory + @"\CommandNames.txt";
         private static bool isInitializerStatusChangedEventActive = true;
         private static bool isDataProviderChangedEventActive = true;
+        private static object input;
 
         #endregion
 
@@ -30,6 +103,38 @@ namespace NeuralNetBuilderAPI
 
         static async Task Main(string[] args)
         {
+            #region Fit Console Window
+
+            // Get this console window's hWnd (window handle).
+            IntPtr hWnd = GetConsoleWindow();
+
+            // Get information about the monitor (display) that the window is (mostly) displayed on.
+            // The .rcWork field contains the monitor's work area, i.e., the usable space excluding
+            // the taskbar (and "application desktop toolbars" - see https://msdn.microsoft.com/en-us/library/windows/desktop/ms724947(v=vs.85).aspx)
+            var mi = MONITORINFO.Default;
+            GetMonitorInfo(MonitorFromWindow(hWnd, MONITOR_DEFAULTTOPRIMARY), ref mi);
+
+            // Get information about this window's current placement.
+            var wp = WINDOWPLACEMENT.Default;
+            GetWindowPlacement(hWnd, ref wp);
+
+            // Calculate the window's new position: lower left corner.
+            // !! Inexplicably, on W10, work-area coordinates (0,0) appear to be (7,7) pixels 
+            // !! away from the true edge of the screen / taskbar.
+            int fudgeOffset = 7;
+            wp.NormalPosition = new RECT()
+            {
+                Left = -fudgeOffset + mi.rcWork.Right / 2,
+                Top = mi.rcWork.Top,// mi.rcWork.Bottom - (wp.NormalPosition.Bottom - wp.NormalPosition.Top),
+                Right = mi.rcWork.Right,
+                Bottom = fudgeOffset + mi.rcWork.Bottom
+            };
+
+            // Place the window at the new position.
+            SetWindowPlacement(hWnd, ref wp);
+
+            #endregion
+
             initializer = new Initializer();
             initializer.InitializerStatusChanged += NetbuilderChanged_EventHandlingMethod;
             pathBuilder = initializer.Paths;            
@@ -53,237 +158,243 @@ namespace NeuralNetBuilderAPI
         {
             Console.WriteLine();
             string consoleInput = Console.ReadLine();
+
+            try
+            {
+                // "create -p" as one command or command + param ?
+                AnalyzeInput(consoleInput, 
+                    out MainCommand mainCommand, 
+                    out string subCommand_String, 
+                    out string parameter, 
+                    out int layerId);
+
+                #region Show
+
+                if (mainCommand == MainCommand.show)
+                {
+                    ShowCommand showCommand = subCommand_String.ToEnum<ShowCommand>();
+
+                    switch (showCommand)
+                    {
+                        case ShowCommand.help:
+                            ShowHelp();
+                            break;
+                        case ShowCommand.settings:
+                            ShowSettings();
+                            break;
+                        case ShowCommand.par:
+                            ShowAllParameters();
+                            break;
+                        case ShowCommand.netpar:
+                            ShowNetParameters();
+                            break;
+                        case ShowCommand.trainerpar:
+                            ShowTrainerParameters();
+                            break;
+                        default:
+                            break;
+                    }
+
+                }
+
+                #endregion
+
+                #region Path
+
+                else if (mainCommand == MainCommand.path)
+                {
+                    PathCommand pathCommand = subCommand_String.ToEnum<PathCommand>();
+                    string path = parameter;
+
+                    switch (pathCommand)
+                    {
+                        case PathCommand.prefix:
+                            pathBuilder.SetFileNamePrefix(path);
+                            break;
+                        case PathCommand.suffix:
+                            pathBuilder.SetFileNameSuffix(path);
+                            break;
+                        case PathCommand.reset:
+                            pathBuilder.ResetPaths();
+                            break;
+                        case PathCommand.general:
+                            pathBuilder.SetGeneralPath(path);
+                            break;
+                        case PathCommand.net0:
+                            pathBuilder.SetInitializedNetPath(path);
+                            break;
+                        case PathCommand.net1:
+                            pathBuilder.SetTrainedNetPath(path);
+                            break;
+                        case PathCommand.samples:
+                            pathBuilder.SetSampleSetPath(path);
+                            break;
+                        case PathCommand.netpar:
+                            pathBuilder.SetNetParametersPath(path);
+                            break;
+                        case PathCommand.trainerpar:
+                            pathBuilder.SetTrainerParametersPath(path);
+                            break;
+                        case PathCommand.log:
+                            pathBuilder.SetLogPath(path);
+                            break;
+                        default:
+                            break;
+                    }
+                }
             
-            // "create -p" as one command or command + param ?
-            AnalyzeInput(consoleInput, 
-                out string mainCommand_String, 
-                out string subCommand_String , 
-                out string enteredPath, 
-                out string enteredParameterName, 
-                out string enteredParameterValue, 
-                out int layerId);
+                #endregion
             
-            MainCommand mainCommand = mainCommand_String.ToEnum<MainCommand>();
+                #region Create
 
-            #region Show
-
-            if (mainCommand == MainCommand.show)
-            {
-                ShowCommand showCommand = subCommand_String.ToEnum<ShowCommand>();
-
-                switch (showCommand)
+                else if (mainCommand == MainCommand.create)
                 {
-                    case ShowCommand.help:
-                        ShowHelp();
-                        break;
-                    case ShowCommand.settings:
-                        ShowSettings();
-                        break;
-                    case ShowCommand.par:
-                        ShowAllParameters();
-                        break;
-                    case ShowCommand.netpar:
-                        ShowNetParameters();
-                        break;
-                    case ShowCommand.trainerpar:
-                        ShowTrainerParameters();
-                        break;
-                    default:
-                        break;
+                    CreateCommand createCommand = subCommand_String.ToEnum<CreateCommand>();
+                
+                    switch (createCommand)
+                    {
+                        case CreateCommand.all:
+                            await CreateNetAndTrainerAsync();
+                            break;
+                        case CreateCommand.net:
+                            await initializer.CreateNetAsync();
+                            break;
+                        case CreateCommand.trainer:
+                            if (await initializer.CreateTrainerAsync(initializer.SampleSet))
+                                initializer.Trainer.TrainerStatusChanged += Trainer_StatusChanged_EventHandlingMethod;
+                            break;
+                        //case CreateCommand.samples:
+                        //    break;
+                        case CreateCommand.par:
+                            CreateAllParameters();
+                            break;
+                        case CreateCommand.netpar:
+                            paramBuilder.CreateNetParameters();
+                            break;
+                        case CreateCommand.trainerpar:
+                            paramBuilder.CreateTrainerParameters();
+                            break;
+                        default:
+                            break;
+                    }
                 }
 
-            }
+                #endregion
 
-            #endregion
+                #region Load
 
-            #region Path
-
-            if (mainCommand == MainCommand.path)
-            {
-                PathCommand pathCommand = subCommand_String.ToEnum<PathCommand>();
-
-                switch (pathCommand)
+                else if (mainCommand == MainCommand.load)
                 {
-                    case PathCommand.prefix:
-                        pathBuilder.SetFileNamePrefix(enteredPath);
-                        break;
-                    case PathCommand.suffix:
-                        pathBuilder.SetFileNameSuffix(enteredPath);
-                        break;
-                    case PathCommand.reset:
-                        pathBuilder.ResetPaths();
-                        break;
-                    case PathCommand.general:
-                        pathBuilder.SetGeneralPath(enteredPath);
-                        break;
-                    case PathCommand.net0:
-                        pathBuilder.SetInitializedNetPath(enteredPath);
-                        break;
-                    case PathCommand.net1:
-                        pathBuilder.SetTrainedNetPath(enteredPath);
-                        break;
-                    case PathCommand.samples:
-                        pathBuilder.SetSampleSetPath(enteredPath);
-                        break;
-                    case PathCommand.netpar:
-                        pathBuilder.SetNetParametersPath(enteredPath);
-                        break;
-                    case PathCommand.trainerpar:
-                        break;
-                    case PathCommand.log:
-                        pathBuilder.SetLogPath(enteredPath);
-                        break;
-                    default:
-                        break;
+                    LoadAndSaveCommand loadCommand = subCommand_String.ToEnum<LoadAndSaveCommand>();
+
+                    switch (loadCommand)
+                    {
+                        case LoadAndSaveCommand.all:
+                            await LoadSamplesNetAndTrainerAsync();
+                            break;
+                        case LoadAndSaveCommand.net0:
+                            await initializer.LoadNetAsync();
+                            break;
+                        case LoadAndSaveCommand.net1:
+                            await initializer.LoadTrainedNetAsync();
+                            break;
+                        case LoadAndSaveCommand.samples:
+                            await initializer.SampleSet.LoadSampleSetAsync(pathBuilder.SampleSet, .01f, 0); // dist etc only in CreatSampleSet?  // Task: dynamize testSamplesFaction!
+                            break;
+                        case LoadAndSaveCommand.par:
+                            await LoadAllParametersAsync();
+                            break;
+                        case LoadAndSaveCommand.netpar:
+                            await paramBuilder.LoadNetParametersAsync();
+                            break;
+                        case LoadAndSaveCommand.trainerpar:
+                            await paramBuilder.LoadTrainerParametersAsync();
+                            break;
+                        default:
+                            break;
+                    }
                 }
-            }
-            
-            #endregion
-            
-            #region Create
 
-            else if (mainCommand == MainCommand.create)
-            {
-                CreateCommand createCommand = subCommand_String.ToEnum<CreateCommand>();
+                #endregion
 
-                switch (createCommand)
+                #region Save
+
+                else if (mainCommand == MainCommand.save)
                 {
-                    case CreateCommand.all:
-                        await CreateNetAndTrainerAsync();
-                        break;
-                    case CreateCommand.net:
-                        await initializer.CreateNetAsync();
-                        break;
-                    case CreateCommand.trainer:
-                        if (await initializer.CreateTrainerAsync(initializer.SampleSet))
-                            initializer.Trainer.TrainerStatusChanged += Trainer_StatusChanged_EventHandlingMethod;
-                        break;
-                    //case CreateCommand.samples:
-                    //    break;
-                    case CreateCommand.par:
-                        CreateAllParameters(enteredParameterValue);
-                        break;
-                    case CreateCommand.netpar:
-                        paramBuilder.CreateNetParameters();
-                        break;
-                    case CreateCommand.trainerpar:
-                        paramBuilder.CreateTrainerParameters();
-                        break;
-                    default:
-                        break;
+                    LoadAndSaveCommand saveCommand = subCommand_String.ToEnum<LoadAndSaveCommand>();
+
+                    switch (saveCommand)
+                    {
+                        case LoadAndSaveCommand.all:
+                            await SaveSamplesNetAndTrainerAsync();
+                            break;
+                        case LoadAndSaveCommand.net0:
+                            await initializer.SaveInitializedNetAsync();
+                            break;
+                        case LoadAndSaveCommand.net1:
+                            await initializer.SaveTrainedNetAsync();
+                            break;
+                        case LoadAndSaveCommand.samples:
+                            await initializer.SampleSet.SaveSampleSetAsync(pathBuilder.SampleSet);  // Task: dynamize testSamplesFaction!
+                            break;
+                        case LoadAndSaveCommand.par:
+                            await SaveAllParametersAsync();
+                            break;
+                        case LoadAndSaveCommand.netpar:
+                            await paramBuilder.SaveNetParametersAsync();
+                            break;
+                        case LoadAndSaveCommand.trainerpar:
+                            await paramBuilder.SaveTrainerParametersAsync();
+                            break;
+                        default:
+                            break;
+                    }
                 }
-            }
 
-            #endregion
+                #endregion
 
-            #region Load
+                #region Change parameter
 
-            else if (mainCommand == MainCommand.load)
-            {
-                LoadAndSaveCommand loadCommand = subCommand_String.ToEnum<LoadAndSaveCommand>();
-
-                switch (loadCommand)
+                else if (mainCommand == MainCommand.p)
                 {
-                    case LoadAndSaveCommand.all:
-                        await LoadSamplesNetAndTrainerAsync();
-                        break;
-                    case LoadAndSaveCommand.net0:
-                        await initializer.LoadNetAsync();
-                        break;
-                    case LoadAndSaveCommand.net1:
-                        await initializer.LoadTrainedNetAsync();
-                        break;
-                    case LoadAndSaveCommand.samples:
-                        await initializer.SampleSet.LoadSampleSetAsync(pathBuilder.SampleSet, .01f, 0); // dist etc only in CreatSampleSet?  // Task: dynamize testSamplesFaction!
-                        break;
-                    case LoadAndSaveCommand.par:
-                        await LoadAllParametersAsync();
-                        break;
-                    case LoadAndSaveCommand.netpar:
-                        await paramBuilder.LoadNetParametersAsync();
-                        break;
-                    case LoadAndSaveCommand.trainerpar:
-                        await paramBuilder.LoadTrainerParametersAsync();
-                        break;
-                    default:
-                        break;
+                    ChangeParameterCommand changeParameterCommand = subCommand_String.ToEnum<ChangeParameterCommand>();
+                    //int layerId = int.Parse(layerId_String);
+
+                    switch (changeParameterCommand)
+                    {
+                        case ChangeParameterCommand.set:
+                            paramBuilder.ChangeParameter(parameter, layerId);
+                            break;
+                        case ChangeParameterCommand.add:
+                            paramBuilder.AddLayerAfter(layerId);
+                            break;
+                        default:
+                            break;
+                    }
                 }
+
+                #endregion
+
+                #region Misc
+
+                else if (mainCommand == MainCommand.logon)
+                    Log();
+                else if (mainCommand == MainCommand.logoff)
+                    Unlog();
+                else if (mainCommand == MainCommand.test)
+                    await TestTraining();
+                else if (mainCommand == MainCommand.train)
+                    await TrainAsync();
+
+                #endregion
+
+                else
+                    throw new ArgumentException("Unkown Command.");
             }
-
-            #endregion
-
-            #region Save
-
-            else if (mainCommand == MainCommand.save)
+            catch (Exception e)
             {
-                LoadAndSaveCommand saveCommand = subCommand_String.ToEnum<LoadAndSaveCommand>();
-
-                switch (saveCommand)
-                {
-                    case LoadAndSaveCommand.all:
-                        await SaveSamplesNetAndTrainerAsync();
-                        break;
-                    case LoadAndSaveCommand.net0:
-                        await initializer.SaveInitializedNetAsync();
-                        break;
-                    case LoadAndSaveCommand.net1:
-                        await initializer.SaveTrainedNetAsync();
-                        break;
-                    case LoadAndSaveCommand.samples:
-                        await initializer.SampleSet.SaveSampleSetAsync(pathBuilder.SampleSet);  // Task: dynamize testSamplesFaction!
-                        break;
-                    case LoadAndSaveCommand.par:
-                        await SaveAllParametersAsync();
-                        break;
-                    case LoadAndSaveCommand.netpar:
-                        await paramBuilder.SaveNetParametersAsync();
-                        break;
-                    case LoadAndSaveCommand.trainerpar:
-                        await paramBuilder.SaveTrainerParametersAsync();
-                        break;
-                    default:
-                        break;
-                }
+                Console.WriteLine(e.Message);
             }
-
-            #endregion
-
-            #region Change parameter
-
-            else if (mainCommand == MainCommand.p)
-            {
-                ChangeParameterCommand changeParameterCommand = subCommand_String.ToEnum<ChangeParameterCommand>();
-
-                switch (changeParameterCommand)
-                {
-                    case ChangeParameterCommand.set:
-                        paramBuilder.ChangeParameter(enteredParameterName, enteredParameterValue, layerId);
-                        break;
-                    case ChangeParameterCommand.add:
-                        paramBuilder.AddLayerAfter(layerId);
-                        break;
-                    default:
-                        break;
-                }
-            }
-
-            #endregion
-
-            #region Misc
-
-            else if (mainCommand == MainCommand.logon)
-                Log();
-            else if (mainCommand == MainCommand.logoff)
-                Unlog();
-            else if (mainCommand == MainCommand.test)
-                await TestTraining();
-            else if (mainCommand == MainCommand.train)
-                await TrainAsync();
-
-            #endregion
-
-            else
-                Console.WriteLine("Unkown Command.");
 
             await ExecuteConsoleCommands();
         }
@@ -299,7 +410,7 @@ namespace NeuralNetBuilderAPI
 
             return true;
         }
-        public static bool CreateAllParameters(string templateName)
+        public static bool CreateAllParameters()
         {
             paramBuilder.CreateNetParameters();
             paramBuilder.CreateTrainerParameters();
@@ -393,18 +504,19 @@ namespace NeuralNetBuilderAPI
         {
             // wa load/save trainer?
             Console.WriteLine("\n" +
+                $"     General Input Format                      : [Main Command] [Sub Command] [opt: Parameter] [opt: Layer Id]\n\n" +
                 $"     All Commands: \n\n" +
-                $"     Set general path                                 : {MainCommand.path}=[general path]\n" +
-                $"     Set general prefix for file names                : {MainCommand.path} {PathCommand.prefix}=[general prefix]\n" +
-                $"     Set general suffix for file names                : {MainCommand.path} {PathCommand.suffix}=[general suffix]\n" +
-                $"     Set path to initialized net                      : {MainCommand.path} {PathCommand.net0}=[path to initialized net]\n" +
-                $"     Set path to trained net                          : {MainCommand.path} {PathCommand.net1}=[path to trained net]\n" +
-                $"     Set path to sample set                           : {MainCommand.path} {PathCommand.samples}=[path to sample set]\n" +
-                $"     Set path to net parameters                       : {MainCommand.path} {PathCommand.netpar}=[path to net parameters]\n" +
-                $"     Set path to trainer parameters                   : {MainCommand.path} {PathCommand.trainerpar}=[path to trainer parameters]\n" +
-                $"     Set path to log file                             : {MainCommand.path} {PathCommand.log}=[path to log file]\n" +
+                $"     Set general path                          : {MainCommand.path}=[general path]\n" +
+                $"     Set general prefix for file names         : {MainCommand.path} {PathCommand.prefix}=[general prefix]\n" +
+                $"     Set general suffix for file names         : {MainCommand.path} {PathCommand.suffix}=[general suffix]\n" +
+                $"     Set path to initialized net               : {MainCommand.path} {PathCommand.net0}=[path to initialized net]\n" +
+                $"     Set path to trained net                   : {MainCommand.path} {PathCommand.net1}=[path to trained net]\n" +
+                $"     Set path to sample set                    : {MainCommand.path} {PathCommand.samples}=[path to sample set]\n" +
+                $"     Set path to net parameters                : {MainCommand.path} {PathCommand.netpar}=[path to net parameters]\n" +
+                $"     Set path to trainer parameters            : {MainCommand.path} {PathCommand.trainerpar}=[path to trainer parameters]\n" +
+                $"     Set path to log file                      : {MainCommand.path} {PathCommand.log}=[path to log file]\n" +
                 //$"     Use general path for all files and default names : {MainCommand.path} {PathCommand.UseGeneralPathAndDefaultNames}\n" +
-                $"     Reset general path and use default names         : {MainCommand.path} {PathCommand.reset}\n\n" +
+                $"     Reset general path and use default names  : {MainCommand.path} {PathCommand.reset}\n\n" +
 
                 // Implement/Check optionality
                 $"     Create all parameters               : {MainCommand.create} {CreateCommand.par} [optional: template name]\n" +
@@ -548,179 +660,89 @@ namespace NeuralNetBuilderAPI
 
         #region helpers
 
-        private static bool AnalyzeInput(string consoleInput, out MainCommand mainCommand, out string subCommand, out string path, out string paramName, out string paramValue, out int layerId)
+        private static void AnalyzeInput(string consoleInput, out MainCommand mainCommand, out string subCommand_String, out string parameter, out int layerId)
         {
+            if (consoleInput.Length <= 1)
+                throw new ArgumentException("A console input must consist of at least two units: a main command and a sub command.");
+
             var splitInput = consoleInput.Split(' ');
-            string layerIdAsString = splitInput?.Last();
 
-            if (!int.TryParse(layerIdAsString, out layerId)) layerId = -1;
             mainCommand = splitInput[0].ToEnum<MainCommand>();
-            subCommand = null;
-            path = null;
-            paramName = null;
-            paramValue = null;
+            subCommand_String = splitInput[1];
 
-            try
+            var inputHelpers = GetInputHelpers(splitInput.Skip(2));
+            layerId = GetLayerId(inputHelpers);
+            var commandsAndParams = splitInput.Except(inputHelpers).ToArray();   // Exclude all InputHelpers!
+            parameter = commandsAndParams.Last();
+
+            switch (mainCommand)
             {
-                switch (mainCommand)
-                {
-                    case MainCommand.Undefined:
-                        break;
-                    case MainCommand.path:
-                        subCommand = GetSubCommand<PathCommand>(splitInput[1]);
-                        path =;
-                        break;
-                    case MainCommand.show:
-                        subCommand = GetSubCommand<ShowCommand>(splitInput[1]);
-                        break;
-                    case MainCommand.create:
-                        subCommand = GetSubCommand<CreateCommand>(splitInput[1]);
-                        break;
-                    case MainCommand.load:
-                        subCommand = GetSubCommand<LoadAndSaveCommand>(splitInput[1]);
-                        break;
-                    case MainCommand.save:
-                        subCommand = GetSubCommand<LoadAndSaveCommand>(splitInput[1]);
-                        break;
-                    case MainCommand.logon:
-                        break;
-                    case MainCommand.logoff:
-                        break;
-                    case MainCommand.train:
-                        break;
-                    case MainCommand.test:
-                        break;
-                    case MainCommand.p:
-                        subCommand = GetSubCommand<ChangeParameterCommand>(splitInput[1]);
-                        paramName =;
-                        paramValue = ;
-                        break;
-                    default:
-                        break;
-                }
-
-
-                // if command = AddLayerAfter
-                if (string.Equals(splitInput.First() + ' ' + splitInput.ElementAt(1), MainCommand.p.ToString() + ChangeParameterCommand.add.ToString()))
-                {
-                    mainCommand = MainCommand.p.ToString();
-                    subCommand = ChangeParameterCommand.add.ToString();
-                }
-                // if command = ChangeParameter
-                else if (string.Equals(splitInput.First() + ' ' + splitInput.ElementAt(1), MainCommand.p.ToString() + ChangeParameterCommand.set.ToString()))
-                {
-                    mainCommand = MainCommand.p.ToString();
-                    subCommand = ChangeParameterCommand.set.ToString();
-                    string parameter = splitInput.Skip(2).First();
-
-                    if (parameter.Contains(':'))
-                    {
-                        paramName = parameter.Split(':').First();
-                        paramValue = parameter.Split(':').Last();
-                    }
-                    else
-                    {
-                        paramName = parameter;
-                    }
-                }
-                // if command = 'path'
-                else if (string.Equals(splitInput.First(), MainCommand.path.ToString() + PathCommand.general.ToString()))
-                {
-                    
-                }
-                // if command = all console input
-                else if (!consoleInput.Contains('=') && !consoleInput.Contains(':'))
-                {
-                    mainCommand = consoleInput;
-                }
-                // if command = ... contains ':'
-                else if (consoleInput.Contains('=') && !consoleInput.Contains(':'))
-                {
-                    if (consoleInput.Where(x => x == '=').Count() > 1)
-                        throw new ArgumentException("No more than one '=' allowed per command!");
-
-                    var tmp = consoleInput.Split('=');
-                    mainCommand = tmp.First();
-                    path = tmp.Last();
-                }
-                // if command = ... contains '='
-                // Never happens since parameters are set above?
-                else if (!consoleInput.Contains('=') && consoleInput.Contains(':'))
-                {
-                    throw new NotImplementedException();
-                    //if (consoleInput.Where(x => x == ':').Count() > 1)
-                    //    throw new ArgumentException("No more than one ':' allowed per command!");
-
-                    //var tmp = consoleInput.Split(':');
-                    //command = commands.ChangeParameter;
-                    //paramName = tmp.First();
-                    //paramValue = tmp.Last();
-                }
-                else if (consoleInput.Contains('=') && consoleInput.Contains(':'))
-                {
-                    throw new ArgumentException("'=' AND ':' in one command are not allowed!");
-                }
-                else { }
-            }
-            catch (Exception e)
-            {
-                Console.WriteLine(e.Message);
-                return false;
+                case MainCommand.Undefined:
+                    break;
+                case MainCommand.path:
+                    subCommand_String = GetSubCommand<PathCommand>(commandsAndParams[1]);
+                    break;
+                case MainCommand.show:
+                    subCommand_String = GetSubCommand<ShowCommand>(commandsAndParams[1]);
+                    break;
+                case MainCommand.create:
+                    subCommand_String = GetSubCommand<CreateCommand>(commandsAndParams[1]);
+                    break;
+                case MainCommand.load:
+                    subCommand_String = GetSubCommand<LoadAndSaveCommand>(commandsAndParams[1]);
+                    break;
+                case MainCommand.save:
+                    subCommand_String = GetSubCommand<LoadAndSaveCommand>(commandsAndParams[1]);
+                    break;
+                case MainCommand.logon:
+                    break;
+                case MainCommand.logoff:
+                    break;
+                case MainCommand.train:
+                    break;
+                case MainCommand.test:
+                    break;
+                case MainCommand.p:
+                    subCommand_String = GetSubCommand<ChangeParameterCommand>(commandsAndParams[1]);
+                    break;
+                default:
+                    break;
             }
 
-            return true;
+            if (subCommand_String == null)
+                throw new ArgumentException($"A valid sub command is missing." );
         }
-        //private static bool AnalyzePathCommand(string[] splitInput, out string subCommand, out string path)
-        //{
-        //    subCommand = null;
-        //    path = null;
-
-        //    try
-        //    {
-        //        PathCommand pathCommand = splitInput[1].ToEnum<PathCommand>();
-
-        //        if (Enum.GetNames(typeof(PathCommand)).Contains(splitInput[1]))
-        //        {
-        //            subCommand = PathCommand.general.ToString();
-        //            path = splitInput.Last();
-        //            return true;
-        //        }
-        //        else
-        //        {
-        //            throw new ArgumentException($"PathCommand '{splitInput[1]}' does not exist.");
-        //        }
-        //    }
-        //    catch (Exception e)
-        //    {
-        //        Console.WriteLine(e.Message);
-        //        return false;
-        //    }
-        //}
         private static string GetSubCommand<TEnum>(string subCommand)
         {
-            string result = null;
-
-            try
-            {
-                // TEnum subCommand = subCommand.ToEnum<TEnum>();
-
-                if (Enum.GetNames(typeof(TEnum)).Contains(subCommand))
-                    result = PathCommand.general.ToString();
-                else
-                    throw new ArgumentException($"PathCommand '{subCommand}' does not exist.");
-            }
-            catch (Exception e) { Console.WriteLine(e.Message); }
-
-            return result;
+            if (Enum.GetNames(typeof(TEnum)).Contains(subCommand))
+                return subCommand;
+            else
+                throw new ArgumentException($"SubCommand '{subCommand}' does not exist.");
         }
+        private static string GetParameterValue(string parameter)
+        {
+            if (parameter.Contains(':'))
+                return parameter.Split(':').Last();
+            else
+                return null;
+        }
+        private static IEnumerable<string> GetInputHelpers(IEnumerable<string> consoleInputWithoutCommands)
+        {
+            var allInpHelpers = Enum.GetNames(typeof(InputHelper));
 
-
-        //private static void SetCommandAndLayerId(string consoleInput, ref string command, ref string layerId)
-        //{
-        //    // Get the word after the first space in the command string (ie after commands.ChangeParameter)
-        //    command = commands.ChangeParameter;
-        //    // layerId = consoleInput.Split(' ').ElementAt(1);
-        //}
+            var elementsStartingWithAnInputHelper = consoleInputWithoutCommands.Where(
+                x => allInpHelpers.Contains(x.First().ToString())
+                );
+            var elementsWithANumberAfterL = elementsStartingWithAnInputHelper.Skip(1).Where(x => int.Parse(x).GetType() == typeof(int)); ;
+            
+            return elementsWithANumberAfterL;
+        }
+        private static int GetLayerId(IEnumerable<string> inputHelpers)
+        {
+            string onlyElementStartingWithL = inputHelpers.SingleOrDefault(x => string.Equals(x[0].ToString(), InputHelper.L.ToString()));
+            int layerId = int.Parse(onlyElementStartingWithL.Skip(1).ToString());
+            return layerId;
+        }
 
         #endregion
 
@@ -732,7 +754,8 @@ namespace NeuralNetBuilderAPI
         {
             if(isInitializerStatusChangedEventActive)
                 Console.WriteLine($"{e.Info}");
-        }private static void DataProviderChanged_EventHandlingMethod(object initializer, DataProviderChangedEventArgs e)
+        }
+        private static void DataProviderChanged_EventHandlingMethod(object initializer, DataProviderChangedEventArgs e)
         {
             if(isDataProviderChangedEventActive)
                 Console.WriteLine($"{e.Info}");
