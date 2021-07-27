@@ -1,87 +1,17 @@
-﻿using DeepLearningDataProvider;
+﻿using ConsoleWindowChanger;
+using DeepLearningDataProvider;
 using NeuralNetBuilder;
 using NeuralNetBuilder.Builders;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
-using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 
 namespace NeuralNetBuilderAPI
 {
     public class Program
     {
-        #region Fit Console Window
-
-        // https://stackoverflow.com/a/42334329/10547243
-
-        [DllImport("kernel32.dll")]
-        static extern IntPtr GetConsoleWindow();
-
-        [DllImport("user32.dll")]
-        static extern IntPtr MonitorFromWindow(IntPtr hwnd, uint dwFlags);
-
-        const int MONITOR_DEFAULTTOPRIMARY = 1;
-
-        [DllImport("user32.dll")]
-        static extern bool GetMonitorInfo(IntPtr hMonitor, ref MONITORINFO lpmi);
-
-        [StructLayout(LayoutKind.Sequential)]
-        struct MONITORINFO
-        {
-            public uint cbSize;
-            public RECT rcMonitor;
-            public RECT rcWork;
-            public uint dwFlags;
-            public static MONITORINFO Default
-            {
-                get { var inst = new MONITORINFO(); inst.cbSize = (uint)Marshal.SizeOf(inst); return inst; }
-            }
-        }
-
-        [StructLayout(LayoutKind.Sequential)]
-        struct RECT
-        {
-            public int Left, Top, Right, Bottom;
-        }
-
-        [StructLayout(LayoutKind.Sequential)]
-        struct POINT
-        {
-            public int x, y;
-        }
-
-        [DllImport("user32.dll", SetLastError = true)]
-        static extern bool GetWindowPlacement(IntPtr hWnd, ref WINDOWPLACEMENT lpwndpl);
-
-        [DllImport("user32.dll", SetLastError = true)]
-        static extern bool SetWindowPlacement(IntPtr hWnd, [In] ref WINDOWPLACEMENT lpwndpl);
-
-        const uint SW_RESTORE = 9;
-
-        [StructLayout(LayoutKind.Sequential)]
-        struct WINDOWPLACEMENT
-        {
-            public uint Length;
-            public uint Flags;
-            public uint ShowCmd;
-            public POINT MinPosition;
-            public POINT MaxPosition;
-            public RECT NormalPosition;
-            public static WINDOWPLACEMENT Default
-            {
-                get
-                {
-                    var instance = new WINDOWPLACEMENT();
-                    instance.Length = (uint)Marshal.SizeOf(instance);
-                    return instance;
-                }
-            }
-        }
-
-        #endregion
-
         #region fields
 
         private static Initializer initializer;
@@ -105,33 +35,7 @@ namespace NeuralNetBuilderAPI
         {
             #region Fit Console Window
 
-            // Get this console window's hWnd (window handle).
-            IntPtr hWnd = GetConsoleWindow();
-
-            // Get information about the monitor (display) that the window is (mostly) displayed on.
-            // The .rcWork field contains the monitor's work area, i.e., the usable space excluding
-            // the taskbar (and "application desktop toolbars" - see https://msdn.microsoft.com/en-us/library/windows/desktop/ms724947(v=vs.85).aspx)
-            var mi = MONITORINFO.Default;
-            GetMonitorInfo(MonitorFromWindow(hWnd, MONITOR_DEFAULTTOPRIMARY), ref mi);
-
-            // Get information about this window's current placement.
-            var wp = WINDOWPLACEMENT.Default;
-            GetWindowPlacement(hWnd, ref wp);
-
-            // Calculate the window's new position: lower left corner.
-            // !! Inexplicably, on W10, work-area coordinates (0,0) appear to be (7,7) pixels 
-            // !! away from the true edge of the screen / taskbar.
-            int fudgeOffset = 7;
-            wp.NormalPosition = new RECT()
-            {
-                Left = -fudgeOffset + mi.rcWork.Right / 2,
-                Top = mi.rcWork.Top,// mi.rcWork.Bottom - (wp.NormalPosition.Bottom - wp.NormalPosition.Top),
-                Right = mi.rcWork.Right,
-                Bottom = fudgeOffset + mi.rcWork.Bottom
-            };
-
-            // Place the window at the new position.
-            SetWindowPlacement(hWnd, ref wp);
+            Change.BorderPositions(.5m, 0, 1, 1);
 
             #endregion
 
@@ -428,7 +332,204 @@ namespace NeuralNetBuilderAPI
             await ExecuteConsoleCommands();
         }
 
-        #region combining methods
+        #region Show methods
+
+        private static void ShowSettings()
+        {
+            // Prevent double output about 'X' is null (from initlializer property) plus 'X' is unset here
+            // by deactivating the event handling method temporarily.
+            isInitializerStatusChangedEventActive = false;
+
+            Console.WriteLine("\n" +
+                $"     Current Settings:\n\n" +
+                $"     General path    : {(pathBuilder.General == default ? " - " : pathBuilder.General)}\n" +
+                $"     General prefix  : {(pathBuilder.FileName_Prefix == default ? " - " : pathBuilder.FileName_Prefix)}\n" +
+                $"     General suffix  : {(pathBuilder.FileName_Suffix == default ? " - " : pathBuilder.FileName_Suffix)}\n\n" +
+
+                $"     Path to net parameters     : {(pathBuilder.NetParameters == default ? " - " : pathBuilder.NetParameters)}\n" +
+                $"     Path to trainer parameters : {(pathBuilder.TrainerParameters == default ? " - " : pathBuilder.TrainerParameters)}\n" +
+                $"     Path to sample set         : {(pathBuilder.SampleSet == default ? " - " : pathBuilder.SampleSet)}\n" +
+                $"     Path to initialized net    : {(pathBuilder.InitializedNet == default ? " - " : pathBuilder.InitializedNet)}\n" +
+                $"     Path to trained net        : {(pathBuilder.TrainedNet == default ? " - " : pathBuilder.TrainedNet)}\n" +
+                $"     Path to log file           : {(pathBuilder.Log == default ? " - " : pathBuilder.Log)}\n\n" +
+
+                $"     Net Parameters     : {(paramBuilder.NetParameters == null ? " - " : "set")}\n" + 
+                $"     Trainer Parameters : {(paramBuilder.TrainerParameters == null ? " - " : "set")}\n" +
+                $"     Sample Set         : {(initializer.SampleSet.TrainSet == null || initializer.SampleSet.TestSet == null ? " - " : "set")}\n" +
+                $"     Net                : {(initializer.Net == null ? " - " : "set")}\n" + 
+                $"     Trainer            : {(initializer.Trainer == null ? " - " : "set")}\n\n" +
+
+                $"     Logging is {(initializer.IsLogged ? "on." : "off.")}\n\n");
+
+            // Reactivate the event handling method again.
+            isInitializerStatusChangedEventActive = true;
+        }
+        private static void ShowHelp()
+        {
+            Console.WriteLine("\n" +
+                $"     General Input Format : [Main Command] [Sub Command] [opt: Parameter] [opt: Layer Id]\n\n" +
+                $"     All Commands: \n\n" +
+                $"     Set general path                          : {MainCommand.path}=[general path]\n" +
+                $"     Set general prefix for file names         : {MainCommand.path} {PathCommand.prefix}=[general prefix]\n" +
+                $"     Set general suffix for file names         : {MainCommand.path} {PathCommand.suffix}=[general suffix]\n" +
+                $"     Set path to initialized net               : {MainCommand.path} {PathCommand.net0}=[path to initialized net]\n" +
+                $"     Set path to trained net                   : {MainCommand.path} {PathCommand.net1}=[path to trained net]\n" +
+                $"     Set path to sample set                    : {MainCommand.path} {PathCommand.samples}=[path to sample set]\n" +
+                $"     Set path to net parameters                : {MainCommand.path} {PathCommand.netpar}=[path to net parameters]\n" +
+                $"     Set path to trainer parameters            : {MainCommand.path} {PathCommand.trainerpar}=[path to trainer parameters]\n" +
+                $"     Set path to log file                      : {MainCommand.path} {PathCommand.log}=[path to log file]\n" +
+                //$"     Use general path for all files and default names : {MainCommand.path} {PathCommand.UseGeneralPathAndDefaultNames}\n" +
+                $"     Reset general path and use default names  : {MainCommand.path} {PathCommand.reset}\n\n" +
+
+                // Implement/Check optionality
+                $"     Create all parameters            : {MainCommand.create} {CreateCommand.par} [opt: template name]\n" +
+                $"     Create the net parameters        : {MainCommand.create} {CreateCommand.netpar}\n" +
+                $"     Create the trainer parameters    : {MainCommand.create} {CreateCommand.trainerpar}\n" +
+                $"     Create sample set, net & trainer : {MainCommand.create} {CreateCommand.all}\n" +
+                $"     Create sample set                : {MainCommand.create} {CreateCommand.samples}\n" +
+                $"     Create the net                   : {MainCommand.create} {CreateCommand.net}\n" +
+                $"     Create the trainer               : {MainCommand.create} {CreateCommand.trainer}\n\n" +
+
+                $"     Load all parameters              : {MainCommand.load} {LoadAndSaveCommand.par}\n" +
+                $"     Load net parameters              : {MainCommand.load} {LoadAndSaveCommand.netpar}\n" +
+                $"     Load trainer parameters          : {MainCommand.load} {LoadAndSaveCommand.trainerpar}\n" +
+                $"     Load sample set, net & trainer   : {MainCommand.load} {LoadAndSaveCommand.all}\n" +
+                $"     Load sample set                  : {MainCommand.load} {LoadAndSaveCommand.samples}\n" +
+                $"     Load initialized net             : {MainCommand.load} {LoadAndSaveCommand.net0}\n" +
+                $"     Load trained net                 : {MainCommand.load} {LoadAndSaveCommand.net1}\n\n" +
+
+                $"     Save all parameters              : {MainCommand.save} {LoadAndSaveCommand.par}\n" +
+                $"     Save net parameters              : {MainCommand.save} {LoadAndSaveCommand.netpar}\n" +
+                $"     Save trainer parameters          : {MainCommand.save} {LoadAndSaveCommand.trainerpar}\n" +
+                $"     Save sample set, net & trainer   : {MainCommand.save} {LoadAndSaveCommand.all}\n" +
+                $"     Save sample set                  : {MainCommand.save} {LoadAndSaveCommand.samples}\n" +
+                $"     Save initialized net             : {MainCommand.save} {LoadAndSaveCommand.net0}\n" +
+                $"     Save trained net                 : {MainCommand.save} {LoadAndSaveCommand.net1}\n\n" +
+
+                $"     Show Settings                    : {MainCommand.show} {ShowCommand.settings}\n" +
+                $"     Show this help                   : {MainCommand.show} {ShowCommand.help}\n" +
+                $"     Show all parameters              : {MainCommand.show} {ShowCommand.par}\n" +
+                $"     Show net parameters              : {MainCommand.show} {ShowCommand.netpar}\n" +
+                $"     Show trainer parameters          : {MainCommand.show} {ShowCommand.trainerpar}\n");
+
+            Console.WriteLine("\n" +
+                $"     Change layer                              : {MainCommand.layer} [layer command] [opt: :parameter value] [opt: layer id]\n" +
+                $"     Add layer after layer index               : {MainCommand.layer} {LayerCommand.del} [preceding layer id]\n" +
+                $"     Example 1 (Add a new layer after layer 0) : {MainCommand.layer} {LayerCommand.left} L0\n\n");
+
+            Console.WriteLine("\n" +
+                $"     Change parameter                          : {MainCommand.param} [parameter command] [parameter name]\n" +
+                $"                                                 {Enumerable.Repeat(' ', MainCommand.param.ToString().Length).ToStringFromCollection(string.Empty)} [opt: :parameter value] [opt: layer id or 'glob']\n" +
+                $"     Example 2 (Set the global WeightMax 1)    : {MainCommand.param} {ParameterCommand.set} {ParameterName.wMax}:1 glob\n" + // global!
+                $"     Example 3 (Set BiasMin of layer 3 to 2)   : {MainCommand.param} {ParameterCommand.set} {ParameterName.bMin}:2 L3\n" +
+                $"     Parameter Names                           : {Enum.GetNames(typeof(ParameterName)).ToStringFromCollection(", ", 4, 49)}\n\n");
+
+            var activationTypes = Enum.GetNames(typeof(ActivationType));
+            Console.WriteLine(
+                $"     Set Activation Type of layer 3 :");
+            for (int i = 0; i < activationTypes.Length; i++)
+            {
+                Console.WriteLine(
+                $"     {activationTypes[i], -30} : {MainCommand.param} {ParameterCommand.set} act:{i} L3");
+            }
+            Console.WriteLine("\n" + 
+                $"     Activate logging    : {MainCommand.logon}\n" +
+                $"     Deactivate logging  : {MainCommand.logoff}\n" +
+                $"     Start test training : {MainCommand.test}\n" +
+                $"     Start training      : {MainCommand.train}\n\n");
+        }
+        private static void ShowAllParameters()
+        {
+            ShowNetParameters();
+            ShowTrainerParameters();
+        }
+        private static void ShowNetParameters()
+        {
+            Console.WriteLine();
+
+            if (paramBuilder.NetParameters == null)
+            {
+                Console.WriteLine("     Net parameters are not set yet.");
+                return;
+            }
+
+            Console.WriteLine(
+                $"     Layers         : {paramBuilder.LayerParametersCollection.Count}\n" +
+                $"     WeightInitType : {paramBuilder.NetParameters.WeightInitType}\n");
+            
+            foreach (var lp in paramBuilder.NetParameters.LayerParametersCollection)
+            {
+                Console.WriteLine($"     Layer {lp.Id}: N = {lp.NeuronsPerLayer}, weightRange = {lp.WeightMin}/{lp.WeightMax}, biasRange = {lp.BiasMin}/{lp.BiasMax}, Activation = {lp.ActivationType}");
+            }
+        }
+        private static void ShowTrainerParameters()
+        {
+            Console.WriteLine();
+
+            if (paramBuilder.TrainerParameters == null)
+            {
+                Console.WriteLine("     Trainer parameters are not set yet.");
+                return;
+            }
+
+            Console.WriteLine(
+                $"     Learning Rate        : {paramBuilder.TrainerParameters.LearningRate}\n" +
+                $"     Learning Rate Change : {paramBuilder.TrainerParameters.LearningRateChange}\n" +
+                $"     Epochs               : {paramBuilder.TrainerParameters.Epochs}\n" +
+                $"     Cost Type            : {paramBuilder.TrainerParameters.CostType}\n");
+        }
+
+        #endregion
+
+        #region Misc Methods
+
+        private static async Task TrainAsync()
+        {
+            stopwatch.Reset();
+            stopwatch.Start();
+            await initializer.TrainAsync(initializer.SampleSet);
+            stopwatch.Stop();
+
+            await initializer.SaveTrainedNetAsync();
+        }
+        private static void Log()
+        {
+            initializer.IsLogged = true;
+            Console.WriteLine("Logging activated.");
+        }
+        private static void Unlog()
+        {
+            initializer.IsLogged = false;
+            Console.WriteLine("Logging deactivated.");
+        }
+        private async static Task TestTraining()
+        {
+            pathBuilder.General = @"C:\Users\Jan_PC\Documents\_NeuralNetApp\Saves\";
+            pathBuilder.FileName_Prefix = @"Test\";
+            pathBuilder.FileName_Suffix = "_test.txt";
+            pathBuilder.ResetPaths();
+
+            if (!await paramBuilder.LoadNetParametersAsync())
+                return;
+            if (!await paramBuilder.LoadTrainerParametersAsync())
+                return;
+            if (!await initializer.LoadNetAsync())
+                return;        // Always check if the loaded initialized net suits loaded parameters!
+
+            if (!await initializer.SampleSet.LoadSampleSetAsync(pathBuilder.SampleSet, .01f, 0))
+                return;             // Always check if the loaded sample set suits the ... parameters!
+            if (!await initializer.CreateNetAsync())
+                return;
+            if (!await initializer.CreateTrainerAsync(initializer.SampleSet))
+                return;
+            initializer.Trainer.TrainerStatusChanged += Trainer_StatusChanged_EventHandlingMethod;
+
+            await TrainAsync();
+        }
+
+        #endregion
+
+        #region Combining Methods
 
         public static async Task<bool> CreateNetAndTrainerAsync()
         {
@@ -488,199 +589,6 @@ namespace NeuralNetBuilderAPI
         }
 
         #endregion
-
-        private static async Task TrainAsync()
-        {
-            stopwatch.Reset();
-            stopwatch.Start();
-            await initializer.TrainAsync(initializer.SampleSet);
-            stopwatch.Stop();
-
-            await initializer.SaveTrainedNetAsync();
-        }
-
-        #region Show methods
-
-        private static void ShowSettings()
-        {
-            // Prevent double output about 'X' is null (from initlializer property) plus 'X' is unset here
-            // by deactivating the event handling method temporarily.
-            isInitializerStatusChangedEventActive = false;
-
-            Console.WriteLine("\n" +
-                $"     Current Settings:\n\n" +
-                $"     General path    : {(pathBuilder.General == default ? " - " : pathBuilder.General)}\n" +
-                $"     General prefix  : {(pathBuilder.FileName_Prefix == default ? " - " : pathBuilder.FileName_Prefix)}\n" +
-                $"     General suffix  : {(pathBuilder.FileName_Suffix == default ? " - " : pathBuilder.FileName_Suffix)}\n\n" +
-
-                $"     Path to net parameters           : {(pathBuilder.NetParameters == default ? " - " : pathBuilder.NetParameters)}\n" +
-                $"     Path to trainer parameters       : {(pathBuilder.TrainerParameters == default ? " - " : pathBuilder.TrainerParameters)}\n" +
-                $"     Path to sample set               : {(pathBuilder.SampleSet == default ? " - " : pathBuilder.SampleSet)}\n" +
-                $"     Path to initialized net          : {(pathBuilder.InitializedNet == default ? " - " : pathBuilder.InitializedNet)}\n" +
-                $"     Path to trained net              : {(pathBuilder.TrainedNet == default ? " - " : pathBuilder.TrainedNet)}\n" +
-                $"     Path to log file                 : {(pathBuilder.Log == default ? " - " : pathBuilder.Log)}\n\n" +
-
-                $"     Net Parameters        : {(paramBuilder.NetParameters == null ? " - " : "set")}\n" + 
-                $"     Trainer Parameters    : {(paramBuilder.TrainerParameters == null ? " - " : "set")}\n" +
-                $"     Sample Set            : {(initializer.SampleSet.TrainSet == null || initializer.SampleSet.TestSet == null ? " - " : "set")}\n" +
-                $"     Net                   : {(initializer.Net == null ? " - " : "set")}\n" + 
-                $"     Trainer               : {(initializer.Trainer == null ? " - " : "set")}\n\n" +
-
-                $"     Logging is {(initializer.IsLogged ? "on." : "off.")}\n\n");
-
-            // Reactivate the event handling method again.
-            isInitializerStatusChangedEventActive = true;
-        }
-        private static void ShowHelp()
-        {
-            Console.WriteLine("\n" +
-                $"     General Input Format                      : [Main Command] [Sub Command] [opt: Parameter] [opt: Layer Id]\n\n" +
-                $"     All Commands: \n\n" +
-                $"     Set general path                          : {MainCommand.path}=[general path]\n" +
-                $"     Set general prefix for file names         : {MainCommand.path} {PathCommand.prefix}=[general prefix]\n" +
-                $"     Set general suffix for file names         : {MainCommand.path} {PathCommand.suffix}=[general suffix]\n" +
-                $"     Set path to initialized net               : {MainCommand.path} {PathCommand.net0}=[path to initialized net]\n" +
-                $"     Set path to trained net                   : {MainCommand.path} {PathCommand.net1}=[path to trained net]\n" +
-                $"     Set path to sample set                    : {MainCommand.path} {PathCommand.samples}=[path to sample set]\n" +
-                $"     Set path to net parameters                : {MainCommand.path} {PathCommand.netpar}=[path to net parameters]\n" +
-                $"     Set path to trainer parameters            : {MainCommand.path} {PathCommand.trainerpar}=[path to trainer parameters]\n" +
-                $"     Set path to log file                      : {MainCommand.path} {PathCommand.log}=[path to log file]\n" +
-                //$"     Use general path for all files and default names : {MainCommand.path} {PathCommand.UseGeneralPathAndDefaultNames}\n" +
-                $"     Reset general path and use default names  : {MainCommand.path} {PathCommand.reset}\n\n" +
-
-                // Implement/Check optionality
-                $"     Create all parameters               : {MainCommand.create} {CreateCommand.par} [opt: template name]\n" +
-                $"     Create the net parameters           : {MainCommand.create} {CreateCommand.netpar}\n" +
-                $"     Create the trainer parameters       : {MainCommand.create} {CreateCommand.trainerpar}\n" +
-                $"     Create sample set, net & trainer    : {MainCommand.create} {CreateCommand.all}\n" +
-                $"     Create sample set                   : {MainCommand.create} {CreateCommand.samples}\n" +
-                $"     Create the net                      : {MainCommand.create} {CreateCommand.net}\n" +
-                $"     Create the trainer                  : {MainCommand.create} {CreateCommand.trainer}\n\n" +
-
-                $"     Load all parameters                 : {MainCommand.load} {LoadAndSaveCommand.par}\n" +
-                $"     Load net parameters                 : {MainCommand.load} {LoadAndSaveCommand.netpar}\n" +
-                $"     Load trainer parameters             : {MainCommand.load} {LoadAndSaveCommand.trainerpar}\n" +
-                $"     Load sample set, net & trainer      : {MainCommand.load} {LoadAndSaveCommand.all}\n" +
-                $"     Load sample set                     : {MainCommand.load} {LoadAndSaveCommand.samples}\n" +
-                $"     Load initialized net                : {MainCommand.load} {LoadAndSaveCommand.net0}\n" +
-                $"     Load trained net                    : {MainCommand.load} {LoadAndSaveCommand.net1}\n\n" +
-
-                $"     Save all parameters                 : {MainCommand.save} {LoadAndSaveCommand.par}\n" +
-                $"     Save net parameters                 : {MainCommand.save} {LoadAndSaveCommand.netpar}\n" +
-                $"     Save trainer parameters             : {MainCommand.save} {LoadAndSaveCommand.trainerpar}\n" +
-                $"     Save sample set, net & trainer      : {MainCommand.save} {LoadAndSaveCommand.all}\n" +
-                $"     Save sample set                     : {MainCommand.save} {LoadAndSaveCommand.samples}\n" +
-                $"     Save initialized net                : {MainCommand.save} {LoadAndSaveCommand.net0}\n" +
-                $"     Save trained net                    : {MainCommand.save} {LoadAndSaveCommand.net1}\n\n" +
-
-                $"     Show Settings                       : {MainCommand.show} {ShowCommand.settings}\n" +
-                $"     Show this help                      : {MainCommand.show} {ShowCommand.help}\n" +
-                $"     Show all parameters                 : {MainCommand.show} {ShowCommand.par}\n" +
-                $"     Show net parameters                 : {MainCommand.show} {ShowCommand.netpar}\n" +
-                $"     Show trainer parameters             : {MainCommand.show} {ShowCommand.trainerpar}\n");
-
-            Console.WriteLine("\n" +
-                $"     Change layer                              : {MainCommand.layer} [layer command] [opt: :parameter value] [opt: layer id]\n" +
-                $"     Add layer after layer index               : {MainCommand.layer} {LayerCommand.del} [preceding layer id]\n" +
-                $"     Example 1 (Add a new layer after layer 0) : {MainCommand.layer} {LayerCommand.left} L0\n\n");
-
-            Console.WriteLine("\n" +
-                $"     Change parameter                          : {MainCommand.param} [parameter command] [parameter name] [opt: :parameter value] [opt: layer id or 'glob']\n" +
-                $"     Example 2 (Set the global WeightMax 1)    : {MainCommand.param} {ParameterCommand.set} {ParameterName.wMax}:1 glob\n" + // global!
-                $"     Example 3 (Set BiasMin of layer 3 to 2)   : {MainCommand.param} {ParameterCommand.set} {ParameterName.bMin}:2 L3\n" +
-                $"     Parameter Names                           : {Enum.GetNames(typeof(ParameterName)).ToStringFromCollection()}\n\n");
-
-            var activationTypes = Enum.GetNames(typeof(ActivationType));
-            Console.WriteLine(
-                $" Set Activation Type of layer 3                :");
-            for (int i = 0; i < activationTypes.Length; i++)
-            {
-                Console.WriteLine(
-                $"     {activationTypes[i], -30}            : {MainCommand.param} {ParameterCommand.set} act:{i} L3");
-            }
-            Console.WriteLine("\n" + 
-                $"     Activate logging                  : {MainCommand.logon}\n" +
-                $"     Deactivate logging                  : {MainCommand.logoff}\n" +
-                $"     Start test training                 : {MainCommand.test}\n" +
-                $"     Start training                      : {MainCommand.train}\n\n");
-        }
-        private static void ShowAllParameters()
-        {
-            ShowNetParameters();
-            ShowTrainerParameters();
-        }
-        private static void ShowNetParameters()
-        {
-            if (paramBuilder.NetParameters == null)
-            {
-                Console.WriteLine("     Net parameters are not set yet.");
-                return;
-            }
-
-            Console.WriteLine(
-                $"     Layers         : {paramBuilder.LayerParametersCollection.Count}\n" +
-                $"     WeightInitType : {paramBuilder.NetParameters.WeightInitType}\n");
-            
-            foreach (var lp in paramBuilder.NetParameters.LayerParametersCollection)
-            {
-                Console.WriteLine($"     Layer {lp.Id}: N = {lp.NeuronsPerLayer}, weightRange = {lp.WeightMin}/{lp.WeightMax}, biasRange = {lp.BiasMin}/{lp.BiasMax}, Activation = {lp.ActivationType}");
-            }
-
-            Console.WriteLine();
-        }
-        private static void ShowTrainerParameters()
-        {
-            if (paramBuilder.TrainerParameters == null)
-            { 
-                Console.WriteLine("     Trainer parameters are not set yet.");
-                return;
-            }
-
-            Console.WriteLine(
-                $"     Learning Rate        : {paramBuilder.TrainerParameters.LearningRate}\n" +
-                $"     Learning Rate Change : {paramBuilder.TrainerParameters.LearningRateChange}\n" +
-                $"     Epochs               : {paramBuilder.TrainerParameters.Epochs}\n" +
-                $"     Cost Type            : {paramBuilder.TrainerParameters.CostType}\n");
-
-            Console.WriteLine();
-        }
-
-        #endregion
-
-        private static void Log()
-        {
-            initializer.IsLogged = true;
-            Console.WriteLine("Logging activated.");
-        }
-        private static void Unlog()
-        {
-            initializer.IsLogged = false;
-            Console.WriteLine("Logging deactivated.");
-        }
-        private async static Task TestTraining()
-        {
-            pathBuilder.General = @"C:\Users\Jan_PC\Documents\_NeuralNetApp\Saves\";
-            pathBuilder.FileName_Prefix = @"Test\";
-            pathBuilder.FileName_Suffix = "_test.txt";
-            pathBuilder.ResetPaths();
-
-            if (!await paramBuilder.LoadNetParametersAsync())
-                return;
-            if (!await paramBuilder.LoadTrainerParametersAsync())
-                return;
-            if (!await initializer.LoadNetAsync())
-                return;        // Always check if the loaded initialized net suits loaded parameters!
-
-            if (!await initializer.SampleSet.LoadSampleSetAsync(pathBuilder.SampleSet, .01f, 0))
-                return;             // Always check if the loaded sample set suits the ... parameters!
-            if (!await initializer.CreateNetAsync())
-                return;
-            if (!await initializer.CreateTrainerAsync(initializer.SampleSet))
-                return;
-            initializer.Trainer.TrainerStatusChanged += Trainer_StatusChanged_EventHandlingMethod;
-
-            await TrainAsync();
-        }
 
         #region helpers
 
