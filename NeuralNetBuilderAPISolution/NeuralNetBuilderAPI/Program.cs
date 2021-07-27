@@ -158,10 +158,10 @@ namespace NeuralNetBuilderAPI
                     switch (createCommand)
                     {
                         case CreateCommand.all:
-                            await CreateNetAndTrainerAsync();
+                            await CreateNetAndTrainerAsync(parameter);
                             break;
                         case CreateCommand.net:
-                            await initializer.CreateNetAsync();
+                            await initializer.CreateNetAsync(parameter);
                             break;
                         case CreateCommand.trainer:
                             if (await initializer.CreateTrainerAsync(initializer.SampleSet))
@@ -278,7 +278,7 @@ namespace NeuralNetBuilderAPI
 
                 #endregion
 
-                #region Change parameter
+                #region Change layer
 
                 else if (mainCommand == MainCommand.layer)
                 {
@@ -293,13 +293,13 @@ namespace NeuralNetBuilderAPI
                             paramBuilder.AddLayerAfter(layerId);
                             break;
                         case LayerCommand.del:
-                            paramBuilder.AddLayerAfter(layerId);
+                            paramBuilder.DeleteLayer(layerId);
                             break;
                         case LayerCommand.left:
-                            paramBuilder.AddLayerAfter(layerId);
+                            paramBuilder.MoveLayerLeft(layerId);
                             break;
                         case LayerCommand.right:
-                            paramBuilder.AddLayerAfter(layerId);
+                            paramBuilder.MoveLayerRight(layerId);
                             break;
                         default:
                             break;
@@ -504,21 +504,28 @@ namespace NeuralNetBuilderAPI
         }
         private async static Task TestTraining()
         {
-            pathBuilder.General = @"C:\Users\Jan_PC\Documents\_NeuralNetApp\Saves\";
-            pathBuilder.FileName_Prefix = @"Test\";
-            pathBuilder.FileName_Suffix = "_test.txt";
+            //pathBuilder.General = @"C:\Users\Jan_PC\Documents\_NeuralNetApp\Saves\";
+            pathBuilder.FileName_Prefix = @"Test2\";
+            //pathBuilder.FileName_Suffix = "_test.txt";
             pathBuilder.ResetPaths();
 
-            if (!await paramBuilder.LoadNetParametersAsync())
-                return;
-            if (!await paramBuilder.LoadTrainerParametersAsync())
-                return;
-            if (!await initializer.LoadNetAsync())
-                return;        // Always check if the loaded initialized net suits loaded parameters!
+            // Get samples
 
             if (!await initializer.SampleSet.LoadSampleSetAsync(pathBuilder.SampleSet, .01f, 0))
                 return;             // Always check if the loaded sample set suits the ... parameters!
-            if (!await initializer.CreateNetAsync())
+
+            // Get net
+
+            if (!await paramBuilder.LoadNetParametersAsync())
+                return;
+            if (!await initializer.CreateNetAsync("true"))
+                return;
+            // if (!await initializer.LoadNetAsync())
+            //     return;        // Always check if the loaded initialized net suits loaded parameters!
+
+            // Get trainer
+
+            if (!await paramBuilder.LoadTrainerParametersAsync())
                 return;
             if (!await initializer.CreateTrainerAsync(initializer.SampleSet))
                 return;
@@ -531,9 +538,9 @@ namespace NeuralNetBuilderAPI
 
         #region Combining Methods
 
-        public static async Task<bool> CreateNetAndTrainerAsync()
+        public static async Task<bool> CreateNetAndTrainerAsync(string appendDefaultLabelsLayer)
         {
-            if (await initializer.CreateNetAsync() == false)
+            if (await initializer.CreateNetAsync(appendDefaultLabelsLayer))
                 return false;
             if (await initializer.CreateTrainerAsync(initializer.SampleSet) == false)
                 return false;
@@ -648,6 +655,9 @@ namespace NeuralNetBuilderAPI
                     break;
                 case MainCommand.param:
                     subCommand_String = GetSubCommand<ParameterCommand>(commandsAndParams[1]);
+                    break;
+                case MainCommand.layer:
+                    subCommand_String = GetSubCommand<LayerCommand>(commandsAndParams[1]);
                     break;
                 default:
                     break;
