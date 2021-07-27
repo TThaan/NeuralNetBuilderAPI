@@ -51,7 +51,7 @@ namespace NeuralNetBuilderAPI
 
             //commands = CommandNames.GetDefaultCommandNames();
 
-            pathBuilder.ResetPaths();
+            // pathBuilder.ResetPaths();
             ShowHelp();
             ShowSettings();
 
@@ -590,18 +590,31 @@ namespace NeuralNetBuilderAPI
 
         #endregion
 
-        #region helpers
+        #region Analyzing Methods
 
         private static void AnalyzeInput(string consoleInput, out MainCommand mainCommand, out string subCommand_String, out string parameter, out int layerId)
         {
             var splitInput = consoleInput.Split(' ');
-            if (splitInput.Length <= 1)
-                throw new ArgumentException("A console input must consist of at least two units: a main command and a sub command.");
 
             var inputHelpers = GetInputHelpers(splitInput.Skip(2));
             var commandsAndParams = splitInput.Except(inputHelpers).ToArray();   // Exclude all InputHelpers!
 
             mainCommand = splitInput[0].ToEnum<MainCommand>();
+            subCommand_String = null;
+            parameter = null;
+            layerId = -1;
+
+            if (splitInput.Length <= 1)
+            {
+                if (splitInput[0] == MainCommand.logon.ToString() ||
+                    splitInput[0] == MainCommand.logoff.ToString() ||
+                    splitInput[0] == MainCommand.train.ToString() ||
+                    splitInput[0] == MainCommand.test.ToString())
+                    return;
+                else 
+                    throw new ArgumentException("A console input must consist of at least two units: a main command and a sub command.");
+            }
+
             subCommand_String = splitInput[1];
             parameter = commandsAndParams.Last();
             layerId = GetLayerId(inputHelpers);
@@ -650,13 +663,6 @@ namespace NeuralNetBuilderAPI
             else
                 throw new ArgumentException($"SubCommand '{subCommand}' does not exist.");
         }
-        //private static string GetParameterValue(string parameter)
-        //{
-        //    if (parameter.Contains(':'))
-        //        return parameter.Split(':').Last();
-        //    else
-        //        return null;
-        //}
         private static IEnumerable<string> GetInputHelpers(IEnumerable<string> consoleInputWithoutCommands)
         {
             var allInpHelpers = Enum.GetNames(typeof(InputHelper));
