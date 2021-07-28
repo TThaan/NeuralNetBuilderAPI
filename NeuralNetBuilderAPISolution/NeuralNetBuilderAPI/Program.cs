@@ -312,13 +312,13 @@ namespace NeuralNetBuilderAPI
                 #region Misc
 
                 else if (mainCommand == MainCommand.logon)
-                    Log();
+                    LogOn();
                 else if (mainCommand == MainCommand.logoff)
-                    Unlog();
+                    LogOff();
                 else if (mainCommand == MainCommand.test)
                     await TestTraining();
                 else if (mainCommand == MainCommand.train)
-                    await TrainAsync();
+                    await TrainAsync(parameter);
 
                 #endregion
 
@@ -507,21 +507,29 @@ namespace NeuralNetBuilderAPI
 
         #region Misc Methods
 
-        private static async Task TrainAsync()
+        private static async Task TrainAsync(string shuffleTrainingSamplesBeforeTraining = "false")
         {
+            bool shuffleSamples = false;
+
+            if (string.Equals(shuffleTrainingSamplesBeforeTraining, "true"))
+                shuffleSamples = true;
+            else if (!string.Equals(shuffleTrainingSamplesBeforeTraining, "false"))
+                throw new ArgumentException("Parameter 'true' makes the trainer shuffle the training samples before the first training.\n" +
+                    "No other parameter is valid after Train!");
+
             stopwatch.Reset();
             stopwatch.Start();
-            await initializer.TrainAsync(initializer.SampleSet);
+            await initializer.TrainAsync(initializer.SampleSet, shuffleSamples);
             stopwatch.Stop();
 
             await initializer.SaveTrainedNetAsync();
         }
-        private static void Log()
+        private static void LogOn()
         {
             initializer.IsLogged = true;
             Console.WriteLine("Logging activated.");
         }
-        private static void Unlog()
+        private static void LogOff()
         {
             initializer.IsLogged = false;
             Console.WriteLine("Logging deactivated.");
@@ -535,7 +543,7 @@ namespace NeuralNetBuilderAPI
 
             // Get samples
 
-            if (!await initializer.SampleSet.LoadSampleSetAsync(pathBuilder.SampleSet, .01f, 0))
+            if (!await initializer.SampleSet.LoadSampleSetAsync(pathBuilder.SampleSet, .05f, 0))
                 return;             // Always check if the loaded sample set suits the ... parameters!
 
             // Get net
@@ -554,14 +562,19 @@ namespace NeuralNetBuilderAPI
             if (!await initializer.CreateTrainerAsync(initializer.SampleSet))
                 return;
             initializer.Trainer.TrainerStatusChanged += Trainer_StatusChanged_EventHandlingMethod;
+            
+            // await initializer.Trainer.SampleSet.TrainSet.ShuffleAsync();
 
             // Show Initialized Net
 
             ShowNet();
 
+            // Activate logging
+            LogOn();
+
             // Train
 
-            await TrainAsync();
+            await TrainAsync("true");
         }
 
         #endregion
