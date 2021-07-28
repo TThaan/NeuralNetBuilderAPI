@@ -95,6 +95,9 @@ namespace NeuralNetBuilderAPI
                         case ShowCommand.trainerpar:
                             ShowTrainerParameters();
                             break;
+                        case ShowCommand.net:
+                            ShowNet();
+                            break;
                         default:
                             break;
                     }
@@ -167,8 +170,6 @@ namespace NeuralNetBuilderAPI
                             if (await initializer.CreateTrainerAsync(initializer.SampleSet))
                                 initializer.Trainer.TrainerStatusChanged += Trainer_StatusChanged_EventHandlingMethod;
                             break;
-                        //case CreateCommand.samples:
-                        //    break;
                         case CreateCommand.par:
                             CreateAllParameters();
                             break;
@@ -242,13 +243,13 @@ namespace NeuralNetBuilderAPI
                             await initializer.SampleSet.SaveSampleSetAsync(pathBuilder.SampleSet);  // Task: dynamize testSamplesFaction!
                             break;
                         case LoadAndSaveCommand.par:
-                            await SaveAllParametersAsync();
+                            await SaveAllParametersAsync(parameter);
                             break;
                         case LoadAndSaveCommand.netpar:
-                            await paramBuilder.SaveNetParametersAsync();
+                            await paramBuilder.SaveNetParametersAsync(parameter);
                             break;
                         case LoadAndSaveCommand.trainerpar:
-                            await paramBuilder.SaveTrainerParametersAsync();
+                            await paramBuilder.SaveTrainerParametersAsync(parameter);
                             break;
                         default:
                             break;
@@ -478,6 +479,29 @@ namespace NeuralNetBuilderAPI
                 $"     Epochs               : {paramBuilder.TrainerParameters.Epochs}\n" +
                 $"     Cost Type            : {paramBuilder.TrainerParameters.CostType}\n");
         }
+        private static void ShowNet()
+        {
+            Console.WriteLine();
+
+            if (initializer.Net == null)
+            {
+                Console.WriteLine("     Net is not set yet.");
+                return;
+            }
+
+            Console.WriteLine(
+                $"     Layers         : {initializer.Net.Layers.Count()}\n" +
+                $"     WeightInitType : {paramBuilder.NetParameters.WeightInitType}\n");
+
+            foreach (var layer in initializer.Net.Layers)
+            {
+                Console.WriteLine($"     Layer {layer.Id}: " +
+                    $"N = {layer.N}, " +
+                    $"weightRange = {layer.Weights?.GetMinimum<float>()}/{layer.Weights?.GetMaximum<float>()}, " +
+                    $"biasRange = {layer.Biases?.GetMinimum()}/{layer.Biases?.GetMaximum()}, " +
+                    $"Activation = {layer.ActivationFunction.ActivationType}");
+            }
+        }
 
         #endregion
 
@@ -504,10 +528,10 @@ namespace NeuralNetBuilderAPI
         }
         private async static Task TestTraining()
         {
-            //pathBuilder.General = @"C:\Users\Jan_PC\Documents\_NeuralNetApp\Saves\";
-            pathBuilder.FileName_Prefix = @"Test2\";
-            //pathBuilder.FileName_Suffix = "_test.txt";
             pathBuilder.ResetPaths();
+            //pathBuilder.FileName_Prefix = @"";
+            //pathBuilder.FileName_Suffix = "_test.txt";
+            pathBuilder.General = @"C:\Users\Jan_PC\Documents\_NeuralNetApp\Saves\Test2\";
 
             // Get samples
 
@@ -530,6 +554,12 @@ namespace NeuralNetBuilderAPI
             if (!await initializer.CreateTrainerAsync(initializer.SampleSet))
                 return;
             initializer.Trainer.TrainerStatusChanged += Trainer_StatusChanged_EventHandlingMethod;
+
+            // Show Initialized Net
+
+            ShowNet();
+
+            // Train
 
             await TrainAsync();
         }
@@ -563,14 +593,11 @@ namespace NeuralNetBuilderAPI
 
             return result;
         }
-        public static async Task<bool> SaveAllParametersAsync()
+        public static async Task<bool> SaveAllParametersAsync(string parameter = default)
         {
-            bool result = true;
-
-            if (await paramBuilder.SaveNetParametersAsync() == false) result = false;
-            if (await paramBuilder.SaveTrainerParametersAsync() == false) result = false;
-
-            return result;
+            if (await paramBuilder.SaveNetParametersAsync(parameter) == false) 
+                return false;
+            return await paramBuilder.SaveTrainerParametersAsync(parameter) == false;
         }
         public static async Task<bool> SaveSamplesNetAndTrainerAsync() // incl trained net but no trainer
         {
@@ -578,10 +605,7 @@ namespace NeuralNetBuilderAPI
                 return false;
             if (await initializer.SaveInitializedNetAsync() == false)
                 return false;
-            if (await initializer.SaveTrainedNetAsync() == false)
-                return false;
-
-            return true;
+            return await initializer.SaveTrainedNetAsync();
         }
         public static async Task<bool> LoadSamplesNetAndTrainerAsync() // incl trained net but no trainer
         {
