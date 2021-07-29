@@ -69,8 +69,11 @@ namespace NeuralNetBuilderAPI
                 AnalyzeInput(consoleInput, 
                     out MainCommand mainCommand, 
                     out string subCommand_String, 
-                    out string parameter, 
-                    out int layerId);
+                    out IEnumerable<string> parameters);
+
+                string singleParameter = parameters.Count() == 1 ? parameters.First() : null;
+
+                // CheckForAndExecutePotentialCommand() -> Refactor main commands into distinct classes!
 
                 #region Show
 
@@ -98,6 +101,9 @@ namespace NeuralNetBuilderAPI
                         case ShowCommand.net:
                             ShowNet();
                             break;
+                        case ShowCommand.samples:
+                            ShowSampleSet();
+                            break;
                         default:
                             break;
                     }
@@ -111,39 +117,38 @@ namespace NeuralNetBuilderAPI
                 else if (mainCommand == MainCommand.path)
                 {
                     PathCommand pathCommand = subCommand_String.ToEnum<PathCommand>();
-                    string path = parameter;
 
                     switch (pathCommand)
                     {
                         case PathCommand.prefix:
-                            pathBuilder.SetFileNamePrefix(path);
+                            pathBuilder.SetFileNamePrefix(singleParameter);
                             break;
                         case PathCommand.suffix:
-                            pathBuilder.SetFileNameSuffix(path);
+                            pathBuilder.SetFileNameSuffix(singleParameter);
                             break;
                         case PathCommand.reset:
                             pathBuilder.ResetPaths();
                             break;
                         case PathCommand.general:
-                            pathBuilder.SetGeneralPath(path);
+                            pathBuilder.SetGeneralPath(singleParameter);
                             break;
                         case PathCommand.net0:
-                            pathBuilder.SetInitializedNetPath(path);
+                            pathBuilder.SetInitializedNetPath(singleParameter);
                             break;
                         case PathCommand.net1:
-                            pathBuilder.SetTrainedNetPath(path);
+                            pathBuilder.SetTrainedNetPath(singleParameter);
                             break;
                         case PathCommand.samples:
-                            pathBuilder.SetSampleSetPath(path);
+                            pathBuilder.SetSampleSetPath(singleParameter);
                             break;
                         case PathCommand.netpar:
-                            pathBuilder.SetNetParametersPath(path);
+                            pathBuilder.SetNetParametersPath(singleParameter);
                             break;
                         case PathCommand.trainerpar:
-                            pathBuilder.SetTrainerParametersPath(path);
+                            pathBuilder.SetTrainerParametersPath(singleParameter);
                             break;
                         case PathCommand.log:
-                            pathBuilder.SetLogPath(path);
+                            pathBuilder.SetLogPath(singleParameter);
                             break;
                         default:
                             break;
@@ -161,10 +166,10 @@ namespace NeuralNetBuilderAPI
                     switch (createCommand)
                     {
                         case CreateCommand.all:
-                            await CreateNetAndTrainerAsync(parameter);
+                            await CreateNetAndTrainerAsync();
                             break;
                         case CreateCommand.net:
-                            await initializer.CreateNetAsync(parameter);
+                            await initializer.CreateNetAsync(singleParameter.ToEnum<PresetValue>());
                             break;
                         case CreateCommand.trainer:
                             if (await initializer.CreateTrainerAsync(initializer.SampleSet))
@@ -204,7 +209,7 @@ namespace NeuralNetBuilderAPI
                             await initializer.LoadTrainedNetAsync();
                             break;
                         case LoadAndSaveCommand.samples:
-                            await initializer.SampleSet.LoadSampleSetAsync(pathBuilder.SampleSet, .01f, 0); // dist etc only in CreatSampleSet?  // Task: dynamize testSamplesFaction!
+                            await LoadSampleSetAsync(pathBuilder.SampleSet, parameters);
                             break;
                         case LoadAndSaveCommand.par:
                             await LoadAllParametersAsync();
@@ -243,13 +248,13 @@ namespace NeuralNetBuilderAPI
                             await initializer.SampleSet.SaveSampleSetAsync(pathBuilder.SampleSet);  // Task: dynamize testSamplesFaction!
                             break;
                         case LoadAndSaveCommand.par:
-                            await SaveAllParametersAsync(parameter);
+                            await SaveAllParametersAsync(singleParameter.ToEnum<PresetValue>());
                             break;
                         case LoadAndSaveCommand.netpar:
-                            await paramBuilder.SaveNetParametersAsync(parameter);
+                            await paramBuilder.SaveNetParametersAsync(singleParameter.ToEnum<PresetValue>());
                             break;
                         case LoadAndSaveCommand.trainerpar:
-                            await paramBuilder.SaveTrainerParametersAsync(parameter);
+                            await paramBuilder.SaveTrainerParametersAsync(singleParameter.ToEnum<PresetValue>());
                             break;
                         default:
                             break;
@@ -267,7 +272,7 @@ namespace NeuralNetBuilderAPI
                     switch (parameterCommand)
                     {
                         case ParameterCommand.set:
-                            paramBuilder.ChangeParameter(parameter, layerId);
+                            paramBuilder.ChangeParameter(parameters);
                             break;
                         //case ParameterCommand.add:
                         //    paramBuilder.AddLayerAfter(layerId);
@@ -309,16 +314,29 @@ namespace NeuralNetBuilderAPI
 
                 #endregion
 
+                #region Log
+
+                else if (mainCommand == MainCommand.log)
+                    switch (subCommand_String.ToEnum<LogCommand>())
+                    {
+                        case LogCommand.on:
+                            LogOn();
+                            break;
+                        case LogCommand.off:
+                            LogOff();
+                            break;
+                        default:
+                            break;
+                    }
+
+                #endregion
+
                 #region Misc
 
-                else if (mainCommand == MainCommand.logon)
-                    LogOn();
-                else if (mainCommand == MainCommand.logoff)
-                    LogOff();
                 else if (mainCommand == MainCommand.test)
                     await TestTraining();
                 else if (mainCommand == MainCommand.train)
-                    await TrainAsync(parameter);
+                    await TrainAsync(parameters.ToEnum<PresetValue>());
 
                 #endregion
 
@@ -367,7 +385,7 @@ namespace NeuralNetBuilderAPI
         }
         private static void ShowHelp()
         {
-            Console.WriteLine("\n" +
+            Console.WriteLine(
                 $"     General Input Format : [Main Command] [Sub Command] [opt: Parameter] [opt: Layer Id]\n\n" +
                 $"     All Commands: \n\n" +
                 $"     Set general path                          : {MainCommand.path}=[general path]\n" +
@@ -383,12 +401,13 @@ namespace NeuralNetBuilderAPI
                 $"     Reset general path and use default names  : {MainCommand.path} {PathCommand.reset}\n\n" +
 
                 // Implement/Check optionality
-                $"     Create all parameters            : {MainCommand.create} {CreateCommand.par} [opt: template name]\n" +
+                $"     Create all parameters            : {MainCommand.create} {CreateCommand.par}\n" +
                 $"     Create the net parameters        : {MainCommand.create} {CreateCommand.netpar}\n" +
                 $"     Create the trainer parameters    : {MainCommand.create} {CreateCommand.trainerpar}\n" +
                 $"     Create sample set, net & trainer : {MainCommand.create} {CreateCommand.all}\n" +
                 $"     Create sample set                : {MainCommand.create} {CreateCommand.samples}\n" +
-                $"     Create the net                   : {MainCommand.create} {CreateCommand.net}\n" +
+                $"     Create the net                   : {MainCommand.create} {CreateCommand.net} [opt: append]\n" +
+                $"                                        append = append an auto-generated last layer considering all labels\n" +
                 $"     Create the trainer               : {MainCommand.create} {CreateCommand.trainer}\n\n" +
 
                 $"     Load all parameters              : {MainCommand.load} {LoadAndSaveCommand.par}\n" +
@@ -411,14 +430,16 @@ namespace NeuralNetBuilderAPI
                 $"     Show this help                   : {MainCommand.show} {ShowCommand.help}\n" +
                 $"     Show all parameters              : {MainCommand.show} {ShowCommand.par}\n" +
                 $"     Show net parameters              : {MainCommand.show} {ShowCommand.netpar}\n" +
-                $"     Show trainer parameters          : {MainCommand.show} {ShowCommand.trainerpar}\n");
+                $"     Show trainer parameters          : {MainCommand.show} {ShowCommand.trainerpar}\n" +
+                $"     Show net                         : {MainCommand.show} {ShowCommand.net}\n" +
+                $"     Show sample set                  : {MainCommand.show} {ShowCommand.samples}\n\n");
 
-            Console.WriteLine("\n" +
+            Console.WriteLine(
                 $"     Change layer                              : {MainCommand.layer} [layer command] [opt: :parameter value] [opt: layer id]\n" +
                 $"     Add layer after layer index               : {MainCommand.layer} {LayerCommand.del} [preceding layer id]\n" +
                 $"     Example 1 (Add a new layer after layer 0) : {MainCommand.layer} {LayerCommand.left} L0\n\n");
 
-            Console.WriteLine("\n" +
+            Console.WriteLine(
                 $"     Change parameter                          : {MainCommand.param} [parameter command] [parameter name]\n" +
                 $"                                                 {Enumerable.Repeat(' ', MainCommand.param.ToString().Length).ToStringFromCollection(string.Empty)} [opt: :parameter value] [opt: layer id or 'glob']\n" +
                 $"     Example 2 (Set the global WeightMax 1)    : {MainCommand.param} {ParameterCommand.set} {ParameterName.wMax}:1 glob\n" + // global!
@@ -434,10 +455,11 @@ namespace NeuralNetBuilderAPI
                 $"     {activationTypes[i], -30} : {MainCommand.param} {ParameterCommand.set} act:{i} L3");
             }
             Console.WriteLine("\n" + 
-                $"     Activate logging    : {MainCommand.logon}\n" +
-                $"     Deactivate logging  : {MainCommand.logoff}\n" +
+                $"     Activate logging    : {MainCommand.log} {LogCommand.on}\n" +
+                $"     Deactivate logging  : {MainCommand.log} {LogCommand.off}\n" +
                 $"     Start test training : {MainCommand.test}\n" +
-                $"     Start training      : {MainCommand.train}\n\n");
+                $"     Start training      : {MainCommand.train} [opt: shuffle]\n" +
+                $"                           shuffle = shuffle training samples before first training\n\n");
         }
         private static void ShowAllParameters()
         {
@@ -502,24 +524,54 @@ namespace NeuralNetBuilderAPI
                     $"Activation = {layer.ActivationFunction.ActivationType}");
             }
         }
+        private static void ShowSampleSet()
+        {
+            Console.WriteLine();
+
+            if (initializer.SampleSet == null || initializer.SampleSet.TrainSet == null || initializer.SampleSet.TestSet == null)
+                throw new ArgumentException("     Sample set is not set yet. Or it is missing training samples or test samples.");
+
+            Console.WriteLine(
+                $"     Training Samples : {initializer.SampleSet.TrainSet.Count()}\n" +
+                $"     Test Samples     : {initializer.SampleSet.TestSet.Count()}\n" +
+                $"     Labels / Targets : {initializer.SampleSet.Targets.Count()}\n");
+
+            Console.WriteLine("     First 5 training samples:\n");
+            for (int i= 0; i <= 5; i++)
+            {
+                Console.WriteLine($"     Label    : {initializer.SampleSet.TrainSet[i].Label}");
+                Console.WriteLine($"     Features : {initializer.SampleSet.TrainSet[i].Features.ToStringFromCollection(", ", 4, 5)}");
+            }
+
+            var labels = initializer.SampleSet.Targets.Keys.ToArray();
+
+            Console.WriteLine("\n     First 100 labels & targets:\n");
+            foreach (var kvp in initializer.SampleSet.Targets)
+            {
+                Console.WriteLine($"     Label   : {kvp.Key}");
+                Console.WriteLine($"     Target  : {kvp.Value.ToStringFromCollection(", ", 20, 5)}");
+
+                int index = Array.IndexOf(labels, kvp.Key);
+                if (index >= 100)
+                    break;
+            }
+        }
 
         #endregion
 
         #region Misc Methods
 
-        private static async Task TrainAsync(string shuffleTrainingSamplesBeforeTraining = "false")
+        /// <summary>
+        /// Valid parameters: Undefined, Shuffle
+        /// </summary>
+        private static async Task TrainAsync(PresetValue parameter = PresetValue.undefined)
         {
-            bool shuffleSamples = false;
-
-            if (string.Equals(shuffleTrainingSamplesBeforeTraining, "true"))
-                shuffleSamples = true;
-            else if (!string.Equals(shuffleTrainingSamplesBeforeTraining, "false"))
-                throw new ArgumentException("Parameter 'true' makes the trainer shuffle the training samples before the first training.\n" +
-                    "No other parameter is valid after Train!");
+            if (parameter != PresetValue.undefined && parameter != PresetValue.shuffle)
+                throw new ArgumentException($"Parameter {parameter} is not valid here. Use {PresetValue.shuffle} or no parameter.");
 
             stopwatch.Reset();
             stopwatch.Start();
-            await initializer.TrainAsync(initializer.SampleSet, shuffleSamples);
+            await initializer.TrainAsync(initializer.SampleSet, parameter);
             stopwatch.Stop();
 
             await initializer.SaveTrainedNetAsync();
@@ -543,14 +595,14 @@ namespace NeuralNetBuilderAPI
 
             // Get samples
 
-            if (!await initializer.SampleSet.LoadSampleSetAsync(pathBuilder.SampleSet, .05f, 0))
+            if (!await initializer.SampleSet.LoadSampleSetAsync(pathBuilder.SampleSet, .1f, 0))
                 return;             // Always check if the loaded sample set suits the ... parameters!
 
             // Get net
 
             if (!await paramBuilder.LoadNetParametersAsync())
                 return;
-            if (!await initializer.CreateNetAsync("true"))
+            if (!await initializer.CreateNetAsync())
                 return;
             // if (!await initializer.LoadNetAsync())
             //     return;        // Always check if the loaded initialized net suits loaded parameters!
@@ -574,16 +626,40 @@ namespace NeuralNetBuilderAPI
 
             // Train
 
-            await TrainAsync("true");
+            await TrainAsync();
         }
 
         #endregion
 
+        /// <summary>
+        /// Default values if you parameters miss an input helper:
+        /// testSamplesInPercent = 10, columnIndex_Label = 0.
+        /// </summary>
+        public static async Task<bool> LoadSampleSetAsync(string samplesFileName, IEnumerable<string> parameters)
+        {
+            // default values
+            int testSamplesInPercent = 10, columnIndex_Label = 0;
+
+            var testParam = parameters.SingleOrDefault(x => x.Contains(ParameterName.test.ToString()));
+            if(testParam != null)
+                if (!int.TryParse(testParam.Split(':').Last(), out testSamplesInPercent))
+                    throw new ArgumentException($"Parameter value {testParam.Split(':').Last()} is not valid." +
+                        "Parameter value for 'test' must be an integer between 1 and 99 (inclusive) defining how much percent of the samples will be used as test samples.");
+
+            var labelParam = parameters.SingleOrDefault(x => x.Contains(ParameterName.label.ToString()));
+            if (labelParam != null)
+                if (!int.TryParse(labelParam.Split(':').Last(), out columnIndex_Label))
+                    throw new ArgumentException($"Parameter value {labelParam.Split(':').Last()} is not valid." +
+                        "Parameter value for 'label' must be a positive integer defining the index of the column holding the label values (First column index = 0!).");
+
+            return await initializer.SampleSet.LoadSampleSetAsync(samplesFileName, (float)testSamplesInPercent / 100, columnIndex_Label);
+        }
+
         #region Combining Methods
 
-        public static async Task<bool> CreateNetAndTrainerAsync(string appendDefaultLabelsLayer)
+        public static async Task<bool> CreateNetAndTrainerAsync()
         {
-            if (await initializer.CreateNetAsync(appendDefaultLabelsLayer))
+            if (await initializer.CreateNetAsync())
                 return false;
             if (await initializer.CreateTrainerAsync(initializer.SampleSet) == false)
                 return false;
@@ -606,11 +682,11 @@ namespace NeuralNetBuilderAPI
 
             return result;
         }
-        public static async Task<bool> SaveAllParametersAsync(string parameter = default)
+        public static async Task<bool> SaveAllParametersAsync(PresetValue indented = PresetValue.indented)
         {
-            if (await paramBuilder.SaveNetParametersAsync(parameter) == false) 
+            if (await paramBuilder.SaveNetParametersAsync(indented) == false) 
                 return false;
-            return await paramBuilder.SaveTrainerParametersAsync(parameter) == false;
+            return await paramBuilder.SaveTrainerParametersAsync(indented) == false;
         }
         public static async Task<bool> SaveSamplesNetAndTrainerAsync() // incl trained net but no trainer
         {
@@ -622,12 +698,10 @@ namespace NeuralNetBuilderAPI
         }
         public static async Task<bool> LoadSamplesNetAndTrainerAsync() // incl trained net but no trainer
         {
-            if (await initializer.SampleSet.LoadSampleSetAsync(pathBuilder.SampleSet, .01f, 0) == false)
+            if (await initializer.SampleSet.LoadSampleSetAsync(pathBuilder.SampleSet, .1f, 0) == false)
                 return false;
             if (await initializer.LoadNetAsync() == false)
                 return false;
-            //if (await initializer.LoadTrainedNetAsync() == false)
-            //    return false;
 
             return true;
         }
@@ -636,91 +710,90 @@ namespace NeuralNetBuilderAPI
 
         #region Analyzing Methods
 
-        private static void AnalyzeInput(string consoleInput, out MainCommand mainCommand, out string subCommand_String, out string parameter, out int layerId)
+        private static void AnalyzeInput(string consoleInput, out MainCommand mainCommand, out string subCommand_String, out IEnumerable<string> parameters)
         {
             var splitInput = consoleInput.Split(' ');
-
-            var inputHelpers = GetInputHelpers(splitInput.Skip(2));
-            var commandsAndParams = splitInput.Except(inputHelpers).ToArray();   // Exclude all InputHelpers!
-
-            mainCommand = splitInput[0].ToEnum<MainCommand>();
-            subCommand_String = null;
-            parameter = null;
-            layerId = -1;
-
-            if (splitInput.Length <= 1)
-            {
-                if (splitInput[0] == MainCommand.logon.ToString() ||
-                    splitInput[0] == MainCommand.logoff.ToString() ||
-                    splitInput[0] == MainCommand.train.ToString() ||
-                    splitInput[0] == MainCommand.test.ToString())
-                    return;
-                else 
-                    throw new ArgumentException("A console input must consist of at least two units: a main command and a sub command.");
-            }
-
+            parameters = splitInput.Skip(2);
+            CheckCommandsStructure(splitInput);
+            CheckParameters(parameters);
+            mainCommand = GetMainCommand(splitInput);
             subCommand_String = splitInput[1];
-            parameter = commandsAndParams.Last();
-            layerId = GetLayerId(inputHelpers);
 
             switch (mainCommand)
             {
                 case MainCommand.Undefined:
                     break;
                 case MainCommand.path:
-                    subCommand_String = GetSubCommand<PathCommand>(commandsAndParams[1]);
+                    CheckSubCommand<PathCommand>(subCommand_String);
                     break;
                 case MainCommand.show:
-                    subCommand_String = GetSubCommand<ShowCommand>(commandsAndParams[1]);
+                    CheckSubCommand<ShowCommand>(subCommand_String);
                     break;
                 case MainCommand.create:
-                    subCommand_String = GetSubCommand<CreateCommand>(commandsAndParams[1]);
+                    CheckSubCommand<CreateCommand>(subCommand_String);
                     break;
                 case MainCommand.load:
-                    subCommand_String = GetSubCommand<LoadAndSaveCommand>(commandsAndParams[1]);
+                    CheckSubCommand<LoadAndSaveCommand>(subCommand_String);
+                    //singleParameter = currentParamNames.ToStringFromCollection(" ");
                     break;
                 case MainCommand.save:
-                    subCommand_String = GetSubCommand<LoadAndSaveCommand>(commandsAndParams[1]);
+                    CheckSubCommand<LoadAndSaveCommand>(subCommand_String);
                     break;
-                case MainCommand.logon:
-                    break;
-                case MainCommand.logoff:
+                case MainCommand.log:
+                    CheckSubCommand<LogCommand>(subCommand_String);
                     break;
                 case MainCommand.train:
                     break;
                 case MainCommand.test:
                     break;
                 case MainCommand.param:
-                    subCommand_String = GetSubCommand<ParameterCommand>(commandsAndParams[1]);
+                    CheckSubCommand<ParameterCommand>(subCommand_String);
                     break;
                 case MainCommand.layer:
-                    subCommand_String = GetSubCommand<LayerCommand>(commandsAndParams[1]);
+                    CheckSubCommand<LayerCommand>(subCommand_String);
                     break;
                 default:
                     break;
             }
 
             if (subCommand_String == null)
-                throw new ArgumentException($"A valid sub command is missing." );
+                throw new ArgumentException($"A valid sub command is missing.");
         }
-        private static string GetSubCommand<TEnum>(string subCommand)
+        /// <summary>
+        /// Check if there are two commands (main and sub) or if it is a special case (like MainCommand.Train or MainCommand.Test).
+        /// </summary>
+        private static void CheckCommandsStructure(string[] splitInput)
         {
-            if (Enum.GetNames(typeof(TEnum)).Contains(subCommand))
-                return subCommand;
-            else
+            if (splitInput.Length <= 1 &&
+                            splitInput[0] != MainCommand.train.ToString() &&
+                            splitInput[0] != MainCommand.test.ToString())
+                throw new ArgumentException("A console input must consist of at least two units: a main command followed by a sub command \n" +
+                    $"excepting the potential stand-alone commands '{MainCommand.train}' and '{MainCommand.test}'.");
+        }
+        private static void CheckSubCommand<TEnum>(string subCommand)
+        {
+            if (!Enum.GetNames(typeof(TEnum)).Contains(subCommand))
                 throw new ArgumentException($"SubCommand '{subCommand}' does not exist.");
         }
-        private static IEnumerable<string> GetInputHelpers(IEnumerable<string> consoleInputWithoutCommands)
+        private static MainCommand GetMainCommand(string[] splitInput)
         {
-            var allInpHelpers = Enum.GetNames(typeof(InputHelper));
+            return splitInput[0].ToEnum<MainCommand>();
+        }
+        private static void CheckParameters(IEnumerable<string> parameters)
+        {
+            //if (uncheckedParameters.Count() == 0)
+            //    return new List<string>();
 
-            var elementsStartingWithAnInputHelper = consoleInputWithoutCommands.Where(
-                x => allInpHelpers.Contains(x.First().ToString()));
+            // Check if parameter names exist as an enum 'ParameterName'.
 
-            if (elementsStartingWithAnInputHelper.Count() == 0)
-                return new List<string>();
+            if (parameters.Count() > 0 &&
+                parameters.Any(x => !Enum.GetNames(typeof(ParameterName)).Contains(x.Split(':').First().ToString())))
+                throw new ArgumentException("...");
 
-            return elementsStartingWithAnInputHelper.Where(x => int.Parse(x.Skip(1).ToStringFromCollection()).GetType() == typeof(int));
+            // Check if parameter values are of type int.
+
+            if (!parameters.Any(x => int.Parse(x.Split(':').Last()).GetType() == typeof(int)))
+                throw new ArgumentException("");
         }
         private static int GetLayerId(IEnumerable<string> inputHelpers)
         {
