@@ -1,29 +1,22 @@
-﻿using NeuralNetBuilderAPI.Commandables;
+﻿using NeuralNetBuilder;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using static NeuralNetBuilderAPI.GlobalConstants;
 using static NeuralNetBuilderAPI.Program;   // To give this ICommandable access to Program. initializer/pathBuilder/paramBuilder. (Later: Use DI!)
 
-namespace NeuralNetBuilder.Commandables
+namespace NeuralNetBuilderAPI.Commandables
 {
-    public class Show : ICommandable
+    public class Show : CommandableBase
     {
-        #region fields
-
-        private static bool isInitializerStatusChangedEventActive = true;
-
-        #endregion
-
         #region ICommandable
 
-        public async Task Execute(IEnumerable<string> parameters)
+        public override async Task Execute(IEnumerable<string> parameters)
         {
             await Task.Run(() =>
             {
                 CheckParameters(parameters);
-                ShowCommand showCommand = GetSubCommand(parameters);
+                ShowCommand showCommand = GetSubCommand<ShowCommand>(parameters);
 
                 switch (showCommand)
                 {
@@ -58,7 +51,7 @@ namespace NeuralNetBuilder.Commandables
 
         #region Sub Command methods
 
-        private static void ShowSettings()
+        internal static void ShowSettings()
         {
             // Prevent double output about 'X' is null (from initlializer property) plus 'X' is unset here
             // by deactivating the event handling method temporarily.
@@ -88,7 +81,7 @@ namespace NeuralNetBuilder.Commandables
             // Reactivate the event handling method again.
             isInitializerStatusChangedEventActive = true;
         }
-        private static void ShowHelp()
+        internal static void ShowHelp()
         {
             Console.WriteLine(
                 $"     General Input Format : [Main Command] [Sub Command] [opt: Parameter] [opt: Layer Id]\n\n" +
@@ -162,16 +155,16 @@ namespace NeuralNetBuilder.Commandables
             Console.WriteLine("\n" +
                 $"     Activate logging    : {MainCommand.log} {LogCommand.on}\n" +
                 $"     Deactivate logging  : {MainCommand.log} {LogCommand.off}\n" +
-                $"     Start test training : {MainCommand.test}\n" +
-                $"     Start training      : {MainCommand.train} [opt: shuffle]\n" +
+                $"     Start training      : {MainCommand.train} {TrainCommand.start} [opt: shuffle]\n" +
+                $"     Start test training : {MainCommand.train} {TrainCommand.example} [opt: shuffle]\n" +
                 $"                           shuffle = shuffle training samples before first training\n\n");
         }
-        private static void ShowAllParameters()
+        internal static void ShowAllParameters()
         {
             ShowNetParameters();
             ShowTrainerParameters();
         }
-        private static void ShowNetParameters()
+        internal static void ShowNetParameters()
         {
             Console.WriteLine();
 
@@ -190,7 +183,7 @@ namespace NeuralNetBuilder.Commandables
                 Console.WriteLine($"     Layer {lp.Id}: N = {lp.NeuronsPerLayer}, weightRange = {lp.WeightMin}/{lp.WeightMax}, biasRange = {lp.BiasMin}/{lp.BiasMax}, Activation = {lp.ActivationType}");
             }
         }
-        private static void ShowTrainerParameters()
+        internal static void ShowTrainerParameters()
         {
             Console.WriteLine();
 
@@ -206,7 +199,7 @@ namespace NeuralNetBuilder.Commandables
                 $"     Epochs               : {paramBuilder.TrainerParameters.Epochs}\n" +
                 $"     Cost Type            : {paramBuilder.TrainerParameters.CostType}\n");
         }
-        private static void ShowNet()
+        internal static void ShowNet()
         {
             Console.WriteLine();
 
@@ -229,7 +222,7 @@ namespace NeuralNetBuilder.Commandables
                     $"Activation = {layer.ActivationFunction.ActivationType}");
             }
         }
-        private static void ShowSampleSet()
+        internal static void ShowSampleSet()
         {
             Console.WriteLine();
 
@@ -268,17 +261,18 @@ namespace NeuralNetBuilder.Commandables
 
         private static void CheckParameters(IEnumerable<string> parameters)
         {
-            CheckParametersStructure(parameters);
+            CheckSubCommand(parameters);
         }
-        private static void CheckParametersStructure(IEnumerable<string> parameters)
+        // in base class?
+        private static void CheckSubCommand(IEnumerable<string> parameters)
         {
-            if (parameters.Count() != 1)
-                throw new ArgumentException($"The main command 'show' must be followed by one of the following sub commands: \n" +
+            if (parameters.Count() == 0)
+                throw new ArgumentException($"The main command {MainCommand.show} must be followed by one of the following sub commands: \n" +
                     $"{Enum.GetNames(typeof(ShowCommand)).ToStringFromCollection()}.");
-        }
-        private static ShowCommand GetSubCommand(IEnumerable<string> parameters)
-        {
-            return parameters.First().Split(Separator_ConsoleInput).First().ToEnum<ShowCommand>();
+            
+            else if (parameters.Count() > 1)
+                throw new ArgumentException($"The main command {MainCommand.show} must be followed by one of the following sub commands and nothing else: \n" +
+                    $"{Enum.GetNames(typeof(ShowCommand)).ToStringFromCollection()}.");
         }
 
         #endregion
