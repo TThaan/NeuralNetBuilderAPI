@@ -2,6 +2,7 @@
 using NeuralNetBuilderAPI.Commandables;
 using System;
 using System.Linq;
+using System.Reflection;
 using static NeuralNetBuilderAPI.GlobalConstants;
 
 namespace NeuralNetBuilderAPI
@@ -24,26 +25,27 @@ namespace NeuralNetBuilderAPI
 
             return result;
         }
-        public static ICommandable ToCommandableBase(this MainCommand mainCommand)
+        public static CommandableBase ToCommandableBase(this MainCommand mainCommand)
         {
-            throw new NotImplementedException();
-            //ICommandable result;
+            CommandableBase result;
 
-            //// Get the ICommandable (in the entry assembly) with the name in 'mainCommand_String'.
+            // Get the ICommandable (in the entry assembly) with the name in 'mainCommand_String'.
 
-            //var ass = System.Reflection.Assembly.GetEntryAssembly();
-            //Type commType = typeof(ICommandable);
-            //result = ass.DefinedTypes
-            //    .Where(x => x.ImplementedInterfaces.Contains(commType))
-            //    .SingleOrDefault(x => Equals(x.Name.ToLower(), mainCommand.ToString().ToLower()))
-            //    .AsType()
-            //    as ICommandable;
+            var ass = Assembly.GetEntryAssembly();
+            Type commType = typeof(CommandableBase);
+            result = ass.DefinedTypes
+                .Where(x => x.BaseType == commType)
+                .FirstOrDefault(x => Equals(x.Name.ToLower(), mainCommand.ToString().ToLower()))
+                .AsType()
+                .InvokeMember(null, BindingFlags.CreateInstance, null, null, null)
+                as CommandableBase;
 
-            //if (result == null)
-            //    throw new ArgumentException($"Cannot find a type {mainCommand.ToString()} in assemby {ass} (even when ignoring case sensitivity).");
+            if (result == null)
+                throw new ArgumentException($"Cannot find a type {mainCommand.ToString()} in assemby {ass} (even when ignoring case sensitivity).");
 
-            //return result;
+            return result;
         }
+        // As general ext meth?
         //public static ICommandable ToICommandable(this MainCommand mainCommand)
         //{
         //    ICommandable result;

@@ -4,10 +4,10 @@ using NeuralNetBuilder;
 using NeuralNetBuilder.Builders;
 using NeuralNetBuilderAPI.Commandables;
 using System;
-using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
+using static NeuralNetBuilderAPI.GlobalConstants;
 
 namespace NeuralNetBuilderAPI
 {
@@ -68,7 +68,7 @@ namespace NeuralNetBuilderAPI
 
             try
             {
-                var splitInput = consoleInput.Split(' ');
+                var splitInput = consoleInput.Split(Separator_ConsoleInput, StringSplitOptions.RemoveEmptyEntries);
                 var mainCommand_String = splitInput.First();
                 var mainCommand = mainCommand_String.ToEnum<MainCommand>();
                 var parameters = splitInput.Skip(1);
@@ -76,10 +76,7 @@ namespace NeuralNetBuilderAPI
                 var comm = mainCommand.ToCommandableBase();
                 await comm.Execute(parameters);
             }
-            catch (Exception e)
-            {
-                Console.WriteLine(e.Message);
-            }
+            catch (Exception e) { Console.WriteLine(e.Message); }
 
             await ExecuteConsoleCommands();
         }

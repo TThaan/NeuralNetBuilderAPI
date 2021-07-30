@@ -11,12 +11,12 @@ namespace NeuralNetBuilderAPI.Commandables
     {
         #region ICommandable
 
-        public override async Task Execute(IEnumerable<string> parameters)
+        public override async Task Execute(IEnumerable<string> parametersAndSubCommand)
         {
             await Task.Run(() =>
             {
-                CheckParameters(parameters);
-                ShowCommand showCommand = GetSubCommand<ShowCommand>(parameters);
+                ShowCommand showCommand = GetSubCommand<ShowCommand>(parametersAndSubCommand, out var parameters);
+                CheckParameters(parameters, MainCommand.show, ConsoleInputCheck.EnsureNoParameter);
 
                 switch (showCommand)
                 {
@@ -253,26 +253,6 @@ namespace NeuralNetBuilderAPI.Commandables
                 if (index >= 100)
                     break;
             }
-        }
-
-        #endregion
-
-        #region helpers
-
-        private static void CheckParameters(IEnumerable<string> parameters)
-        {
-            CheckSubCommand(parameters);
-        }
-        // in base class?
-        private static void CheckSubCommand(IEnumerable<string> parameters)
-        {
-            if (parameters.Count() == 0)
-                throw new ArgumentException($"The main command {MainCommand.show} must be followed by one of the following sub commands: \n" +
-                    $"{Enum.GetNames(typeof(ShowCommand)).ToStringFromCollection()}.");
-            
-            else if (parameters.Count() > 1)
-                throw new ArgumentException($"The main command {MainCommand.show} must be followed by one of the following sub commands and nothing else: \n" +
-                    $"{Enum.GetNames(typeof(ShowCommand)).ToStringFromCollection()}.");
         }
 
         #endregion

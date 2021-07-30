@@ -12,13 +12,13 @@ namespace NeuralNetBuilderAPI.Commandables
     {
         #region ICommandable
 
-        public override async Task Execute(IEnumerable<string> parameters)
+        public override async Task Execute(IEnumerable<string> parametersAndSubCommand)
         {
             await Task.Run(async () =>
             {
-                CheckParameters(parameters);
-                LoadAndSaveCommand saveCommand = GetSubCommand<LoadAndSaveCommand>(parameters);
-                string singleParameter = parameters.ElementAt(1);
+                LoadAndSaveCommand saveCommand = GetSubCommand<LoadAndSaveCommand>(parametersAndSubCommand, out var parameters);
+                CheckParameters(parameters, MainCommand.save, ConsoleInputCheck.EnsureSingleParameter);
+                string singleParameter = parametersAndSubCommand.ElementAt(1);
 
                 switch (saveCommand)
                 {
@@ -87,31 +87,6 @@ namespace NeuralNetBuilderAPI.Commandables
             await initializer.SampleSet.SaveSampleSetAsync(pathBuilder.SampleSet);
             await initializer.SaveInitializedNetAsync();
             await initializer.SaveTrainedNetAsync();
-        }
-
-        #endregion
-
-        #region helpers
-
-        private static void CheckParameters(IEnumerable<string> parameters)
-        {
-            CheckSubCommand(parameters);
-            CheckParameterStructure(parameters);
-        }
-        // in base class?
-        private static void CheckSubCommand(IEnumerable<string> parameters)
-        {
-            if (parameters.Count() == 0)
-                throw new ArgumentException(
-                    $"The main command {MainCommand.save} must be followed by one of the following sub commands: \n" +
-                    $"{Enum.GetNames(typeof(LoadAndSaveCommand)).ToStringFromCollection()}.");
-        }
-        private static void CheckParameterStructure(IEnumerable<string> parameters)
-        {
-            if (parameters.Count() > 2)
-                throw new ArgumentException(
-                    $"The main command {MainCommand.save} must be followed by a sub command and in case of some sub commands an optional parameter ('{PresetValue.indented}').\n" +
-                    "Anything else is invalid");
         }
 
         #endregion

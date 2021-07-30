@@ -1,5 +1,4 @@
-﻿using NeuralNetBuilder;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -11,12 +10,12 @@ namespace NeuralNetBuilderAPI.Commandables
     {
         #region ICommandable
 
-        public override async Task Execute(IEnumerable<string> parameters)
+        public override async Task Execute(IEnumerable<string> parametersAndSubCommand)
         {
             await Task.Run(async () =>
             {
-                CheckParameters(parameters);
-                LoadAndSaveCommand loadCommand = GetSubCommand<LoadAndSaveCommand>(parameters);
+                LoadAndSaveCommand loadCommand = GetSubCommand<LoadAndSaveCommand>(parametersAndSubCommand, out var parameters);
+                // CheckParameters(parameters, MainCommand.load);
 
                 switch (loadCommand)
                 {
@@ -92,31 +91,6 @@ namespace NeuralNetBuilderAPI.Commandables
 
             return await initializer.SampleSet.LoadSampleSetAsync(samplesFileName, (float)testSamplesInPercent / 100, columnIndex_Label);
         }
-
-        #endregion
-
-        #region helpers
-
-        private static void CheckParameters(IEnumerable<string> parameters)
-        {
-            CheckSubCommand(parameters);
-            //CheckParameterStructure(parameters);
-        }
-        // in base class?
-        private static void CheckSubCommand(IEnumerable<string> parameters)
-        {
-            if (parameters.Count() == 0)
-                throw new ArgumentException(
-                    $"The main command {MainCommand.load} must be followed by one of the following sub commands: \n" +
-                    $"{Enum.GetNames(typeof(LoadAndSaveCommand)).ToStringFromCollection()}.");
-        }
-        //private static void CheckParameterStructure(IEnumerable<string> parameters)
-        //{
-        //    if (parameters.Count() > 2)
-        //        throw new ArgumentException(
-        //            $"The main command {MainCommand.load} must be followed by a sub command and in case of the sub command {LoadAndSaveCommand.net} an optional parameter ('{PresetValue.append}').\n" +
-        //            "Anything else is invalid");
-        //}
 
         #endregion
     }

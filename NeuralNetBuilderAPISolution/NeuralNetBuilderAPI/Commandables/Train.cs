@@ -11,13 +11,13 @@ namespace NeuralNetBuilderAPI.Commandables
     {
         #region ICommandable
 
-        public override async Task Execute(IEnumerable<string> parameters)
+        public override async Task Execute(IEnumerable<string> parametersAndSubCommand)
         {
             await Task.Run(async () =>
             {
-                CheckParameters(parameters);
-                TrainCommand trainCommand = GetSubCommand<TrainCommand>(parameters);
-                string singleParameter = parameters.ElementAt(1).GetParameterValue_String();
+                TrainCommand trainCommand = GetSubCommand<TrainCommand>(parametersAndSubCommand, out var parameters);
+                CheckParameters(parameters, MainCommand.train, ConsoleInputCheck.EnsureSingleParameter);
+                string singleParameter = parametersAndSubCommand.ElementAt(1).GetParameterValue_String();
 
                 switch (trainCommand)
                 {
@@ -99,30 +99,6 @@ namespace NeuralNetBuilderAPI.Commandables
 
             await TrainAsync(shuffle);
         }
-
-        #endregion
-
-        #region helpers
-
-        private static void CheckParameters(IEnumerable<string> parameters)
-        {
-            CheckSubCommand(parameters);
-            //CheckParameterStructure(parameters);
-        }
-        // in base class?
-        private static void CheckSubCommand(IEnumerable<string> parameters)
-        {
-            if (parameters.Count() == 0)
-                throw new ArgumentException(
-                    $"The main command {MainCommand.param} must be followed by one of the following sub commands: \n" +
-                    $"{Enum.GetNames(typeof(ParameterCommand)).ToStringFromCollection()}.");
-        }
-        //private static void CheckParameterStructure(IEnumerable<string> parameters)
-        //{
-        //    if (parameters.Count() > 2)
-        //        throw new ArgumentException(
-        //            $"The main command {MainCommand.path} must be followed by a sub command and except in the case of the sub command {PathCommand.reset} a full file name.\n");
-        //}
 
         #endregion
     }
