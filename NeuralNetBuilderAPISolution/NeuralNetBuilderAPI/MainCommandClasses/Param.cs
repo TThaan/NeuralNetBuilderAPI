@@ -5,9 +5,9 @@ using static NeuralNetBuilderAPI.Program;   // To give this ICommandable access 
 
 namespace NeuralNetBuilderAPI.Commandables
 {
-    public class ChangeParameter : CommandableBase
+    public class Param : CommandableBase
     {
-        #region ICommandable
+        #region Commandable
 
         public override async Task Execute(IEnumerable<string> parametersAndSubCommand)
         {
@@ -15,7 +15,7 @@ namespace NeuralNetBuilderAPI.Commandables
             {
                 ParameterCommand parameterCommand = GetSubCommand<ParameterCommand>(parametersAndSubCommand, out var parameters);
                 // CheckParameters(parameters, MainCommand.param);
-                int layerId = GetLayerId(parameters, out var parametersWithoutId);                
+                int layerId = GetLayerId(parameters, out var parametersWithoutId);
 
                 switch (parameterCommand)
                 {

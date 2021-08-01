@@ -4,9 +4,9 @@ using static NeuralNetBuilderAPI.Program;   // To give this ICommandable access 
 
 namespace NeuralNetBuilderAPI.Commandables
 {
-    public class ChangeLayer : CommandableBase
+    public class Layer : CommandableBase
     {
-        #region ICommandable
+        #region Commandable
 
         public override async Task Execute(IEnumerable<string> parametersAndSubCommand)
         {

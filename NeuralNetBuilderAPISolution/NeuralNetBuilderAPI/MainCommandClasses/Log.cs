@@ -7,7 +7,7 @@ namespace NeuralNetBuilderAPI.Commandables
 {
     public class Log : CommandableBase
     {
-        #region ICommandable
+        #region Commandable
 
         public override async Task Execute(IEnumerable<string> parametersAndSubCommand)
         {

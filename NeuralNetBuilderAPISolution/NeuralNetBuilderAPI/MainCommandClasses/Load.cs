@@ -8,7 +8,7 @@ namespace NeuralNetBuilderAPI.Commandables
 {
     public class Load : CommandableBase
     {
-        #region ICommandable
+        #region Commandable
 
         public override async Task Execute(IEnumerable<string> parametersAndSubCommand)
         {
@@ -76,6 +76,10 @@ namespace NeuralNetBuilderAPI.Commandables
         {
             // default values
             int testSamplesInPercent = 10, columnIndex_Label = 0;
+
+            if (parameters.Count() > 0 && parameters.Any(
+                x => !x.Contains(ParameterName.test.ToString()) && !x.Contains(ParameterName.label.ToString())))
+                    throw new ArgumentException($"Only '{ParameterName.test}' and '{ParameterName.label}' are valid parameters for {MainCommand.load}");
 
             var testParam = parameters.SingleOrDefault(x => x.Contains(ParameterName.test.ToString()));
             if (testParam != null)

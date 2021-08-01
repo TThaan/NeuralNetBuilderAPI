@@ -24,31 +24,43 @@ namespace NeuralNetBuilderAPI.Commandables
         protected static int GetLayerId(IEnumerable<string> parameters, out string[] paramsWithoutLayerId)
         {
             paramsWithoutLayerId = null;
-            string layerId_String = parameters.SingleOrDefault(x => Equals(x.Split(':').First(), ParameterName.L.ToString()));
+            string layerId_String = parameters.SingleOrDefault(x => Equals(x.Split(Separator_Parameter).First(), ParameterName.L.ToString()));
 
             if (layerId_String == null)
                 return -1;
             // throw new ArgumentException($"Cannot find a parameter for the layer index. (Expected: {ParameterName.L}:[index (positive integer)]).");
 
-            if (!int.TryParse(layerId_String, out int result))
+            if (!int.TryParse(layerId_String.Split(Separator_Parameter).Last(), out int result))
                 throw new ArgumentException($"Cannot transform {layerId_String} into a layer index (positive integer).");
 
             paramsWithoutLayerId = parameters.Where(x => !Equals(x.Split(':').First(), ParameterName.L.ToString())).ToArray();
 
             return result;
-        }        
+        }
+        protected static TParam GetSingleParameter<TParam>(IEnumerable<string> parameters)
+        {
+            string singleParameter = parameters.Count() == 0 ? null : parameters.ElementAt(0).GetParameterValue_String();
+
+            TParam result = singleParameter == null ? default : (TParam)(object)singleParameter.ToEnum<PresetValue>();
+            return result;
+        }
+
         protected static void CheckParameters(IEnumerable<string> parameters, MainCommand mainCommand, params ConsoleInputCheck[] checks)
         {
             // Check if there is no parameter at all.
-            if (checks.Contains(ConsoleInputCheck.EnsureNoParameter) && parameters.Count() > 0)
+            if (checks.Contains(ConsoleInputCheck.EnsureNoParameter) && parameters.Count() != 0)
                 throw new ArgumentException($"The main command {mainCommand} must be followed by one of the following sub commands: \n" +
                     $"{Enum.GetNames(typeof(ShowCommand)).ToStringFromCollection()}.");
 
             // check if there is exactly one single parameter.
-            if (checks.Contains(ConsoleInputCheck.EnsureSingleParameter) && parameters.Count() == 1)
+            if (checks.Contains(ConsoleInputCheck.EnsureSingleParameter) && parameters.Count() != 1)
+                throw new ArgumentException($"The main command {mainCommand} must be followed by one of the following sub commands and nothing else: \n" +
+                    $"{Enum.GetNames(typeof(ShowCommand)).ToStringFromCollection()}.");
+
+            // check if there is no or one single parameter.
+            if (checks.Contains(ConsoleInputCheck.EnsureNoOrSingleParameter) && parameters.Count() > 1)
                 throw new ArgumentException($"The main command {mainCommand} must be followed by one of the following sub commands and nothing else: \n" +
                     $"{Enum.GetNames(typeof(ShowCommand)).ToStringFromCollection()}.");
         }
-
     }
 }

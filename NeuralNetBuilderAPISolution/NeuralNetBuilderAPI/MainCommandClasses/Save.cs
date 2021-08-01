@@ -10,15 +10,15 @@ namespace NeuralNetBuilderAPI.Commandables
 {
     public class Save : CommandableBase
     {
-        #region ICommandable
+        #region Commandable
 
         public override async Task Execute(IEnumerable<string> parametersAndSubCommand)
         {
             await Task.Run(async () =>
             {
                 LoadAndSaveCommand saveCommand = GetSubCommand<LoadAndSaveCommand>(parametersAndSubCommand, out var parameters);
-                CheckParameters(parameters, MainCommand.save, ConsoleInputCheck.EnsureSingleParameter);
-                string singleParameter = parametersAndSubCommand.ElementAt(1);
+                CheckParameters(parameters, MainCommand.save, ConsoleInputCheck.EnsureNoOrSingleParameter);
+                var singleParameter = GetSingleParameter<PresetValue>(parameters);
 
                 switch (saveCommand)
                 {
@@ -35,13 +35,13 @@ namespace NeuralNetBuilderAPI.Commandables
                         await initializer.SampleSet.SaveSampleSetAsync(pathBuilder.SampleSet);
                         break;
                     case LoadAndSaveCommand.par:
-                        await SaveAllParametersAsync(singleParameter.ToEnum<PresetValue>());
+                        await SaveAllParametersAsync(singleParameter);
                         break;
                     case LoadAndSaveCommand.netpar:
-                        await SaveNetParametersAsync(singleParameter.ToEnum<PresetValue>());
+                        await SaveNetParametersAsync(singleParameter);
                         break;
                     case LoadAndSaveCommand.trainerpar:
-                        await SaveTrainerParametersAsync(singleParameter.ToEnum<PresetValue>());
+                        await SaveTrainerParametersAsync(singleParameter);
                         break;
                     default:
                         break;
@@ -64,7 +64,7 @@ namespace NeuralNetBuilderAPI.Commandables
 
             if (indented == PresetValue.indented)
                 formatting = Formatting.Indented;
-            else if (indented != PresetValue.no)
+            else if (indented != PresetValue.undefined)
                 throw new ArgumentException($"{indented} is not a valid parameter for {MainCommand.save} {LoadAndSaveCommand.netpar}.\n" +
                     $"When saving net parameters you can add parameter {PresetValue.indented} or no parameter at all.");
 

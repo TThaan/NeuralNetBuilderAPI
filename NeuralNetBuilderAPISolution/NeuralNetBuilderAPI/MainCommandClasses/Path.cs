@@ -7,7 +7,7 @@ namespace NeuralNetBuilderAPI.Commandables
 {
     public class Path : CommandableBase
     {
-        #region ICommandable
+        #region Commandable
 
         public override async Task Execute(IEnumerable<string> parametersAndSubCommand)
         {
@@ -15,7 +15,7 @@ namespace NeuralNetBuilderAPI.Commandables
             {
                 PathCommand pathCommand = GetSubCommand<PathCommand>(parametersAndSubCommand, out var parameters);
                 CheckParameters(parameters, MainCommand.path, ConsoleInputCheck.EnsureSingleParameter);
-                string singleParameter = parameters.ElementAt(1).GetParameterValue_String();
+                var singleParameter = GetSingleParameter<string>(parameters);
 
                 switch (pathCommand)
                 {

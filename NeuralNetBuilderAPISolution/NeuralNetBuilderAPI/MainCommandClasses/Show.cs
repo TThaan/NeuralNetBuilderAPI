@@ -9,7 +9,7 @@ namespace NeuralNetBuilderAPI.Commandables
 {
     public class Show : CommandableBase
     {
-        #region ICommandable
+        #region Commandable
 
         public override async Task Execute(IEnumerable<string> parametersAndSubCommand)
         {

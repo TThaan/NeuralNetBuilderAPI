@@ -1,7 +1,6 @@
 ﻿using NeuralNetBuilder;
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Threading.Tasks;
 using static NeuralNetBuilderAPI.Program;   // To give this ICommandable access to Program. initializer/pathBuilder/paramBuilder. (Later: Use DI!)
 
@@ -9,25 +8,25 @@ namespace NeuralNetBuilderAPI.Commandables
 {
     public class Train : CommandableBase
     {
-        #region ICommandable
+        #region Commandable
 
         public override async Task Execute(IEnumerable<string> parametersAndSubCommand)
         {
             await Task.Run(async () =>
             {
                 TrainCommand trainCommand = GetSubCommand<TrainCommand>(parametersAndSubCommand, out var parameters);
-                CheckParameters(parameters, MainCommand.train, ConsoleInputCheck.EnsureSingleParameter);
-                string singleParameter = parametersAndSubCommand.ElementAt(1).GetParameterValue_String();
+                CheckParameters(parameters, MainCommand.train, ConsoleInputCheck.EnsureNoOrSingleParameter);
+                var singleParameter = GetSingleParameter<PresetValue>(parameters);
 
                 switch (trainCommand)
                 {
                     case TrainCommand.Undefined:
                         break;
                     case TrainCommand.start:
-                        await TrainAsync(singleParameter.ToEnum<PresetValue>());
+                        await TrainAsync(singleParameter);
                         break;
                     case TrainCommand.example:
-                        await ExampleTraining(singleParameter.ToEnum<PresetValue>());
+                        await ExampleTraining(singleParameter);
                         break;
                     default:
                         break;

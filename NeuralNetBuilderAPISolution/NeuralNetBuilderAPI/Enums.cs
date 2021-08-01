@@ -67,6 +67,7 @@
         Undefined,
         EnsureNoParameter,      // No parameter at all is allowed.
         EnsureSingleParameter,  // No more nor less than one parameter is allowed.
+        EnsureNoOrSingleParameter,
         // SubCommandIsDismissed   // No sub command is needed.
     }
 }

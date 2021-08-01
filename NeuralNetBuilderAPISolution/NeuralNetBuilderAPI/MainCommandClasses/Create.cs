@@ -8,15 +8,15 @@ namespace NeuralNetBuilderAPI.Commandables
 {
     public class Create : CommandableBase
     {
-        #region ICommandable
+        #region Commandable
 
         public override async Task Execute(IEnumerable<string> parametersAndSubCommand)
         {
             await Task.Run(async () =>
             {
                 CreateCommand createCommand = GetSubCommand<CreateCommand>(parametersAndSubCommand, out var parameters);
-                CheckParameters(parameters, MainCommand.create, ConsoleInputCheck.EnsureSingleParameter);
-                string singleParameter = parametersAndSubCommand.ElementAt(1);
+                CheckParameters(parameters, MainCommand.create, ConsoleInputCheck.EnsureNoOrSingleParameter);
+                var singleParameter = GetSingleParameter<PresetValue>(parameters);
 
                 switch (createCommand)
                 {
@@ -24,7 +24,7 @@ namespace NeuralNetBuilderAPI.Commandables
                         await CreateNetAndTrainerAsync();
                         break;
                     case CreateCommand.net:
-                        await initializer.CreateNetAsync(singleParameter.ToEnum<PresetValue>());
+                        await initializer.CreateNetAsync(singleParameter);
                         break;
                     case CreateCommand.trainer:
                         if (await initializer.CreateTrainerAsync(initializer.SampleSet))
