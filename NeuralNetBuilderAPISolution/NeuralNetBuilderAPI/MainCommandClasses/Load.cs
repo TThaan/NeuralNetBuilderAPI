@@ -15,7 +15,10 @@ namespace NeuralNetBuilderAPI.Commandables
             await Task.Run(async () =>
             {
                 LoadAndSaveCommand loadCommand = GetSubCommand<LoadAndSaveCommand>(parametersAndSubCommand, out var parameters);
-                // CheckParameters(parameters, MainCommand.load);
+                if (loadCommand == LoadAndSaveCommand.samples)
+                    CheckParameters(parameters, Show.InputInfo_Load);
+                else
+                    CheckParameters(parameters, Show.InputInfo_Load, ConsoleInputCheck.EnsureNoParameter);
 
                 switch (loadCommand)
                 {
@@ -50,29 +53,21 @@ namespace NeuralNetBuilderAPI.Commandables
 
         #region Sub Command methods
 
-        internal static async Task<bool> LoadAllParametersAsync()
+        internal static async Task LoadAllParametersAsync()
         {
-            bool result = true;
-
-            if (await paramBuilder.LoadNetParametersAsync() == false) result = false;
-            if (await paramBuilder.LoadTrainerParametersAsync() == false) result = false;
-
-            return result;
+            await paramBuilder.LoadNetParametersAsync();
+            await paramBuilder.LoadTrainerParametersAsync();
         }
-        internal static async Task<bool> LoadSamplesAndNetAsync()
+        internal static async Task LoadSamplesAndNetAsync()
         {
-            if (await initializer.SampleSet.LoadSampleSetAsync(pathBuilder.SampleSet, .1f, 0) == false)
-                return false;
-            if (await initializer.LoadNetAsync() == false)
-                return false;
-
-            return true;
+            await initializer.SampleSet.LoadSampleSetAsync(pathBuilder.SampleSet, .1f, 0);
+            await initializer.LoadNetAsync();
         }
         /// <summary>
         /// Default values if you parameters miss an input helper:
         /// testSamplesInPercent = 10, columnIndex_Label = 0.
         /// </summary>
-        internal static async Task<bool> LoadSampleSetAsync(string samplesFileName, IEnumerable<string> parameters)
+        internal static async Task LoadSampleSetAsync(string samplesFileName, IEnumerable<string> parameters)
         {
             // default values
             int testSamplesInPercent = 10, columnIndex_Label = 0;
@@ -93,7 +88,7 @@ namespace NeuralNetBuilderAPI.Commandables
                     throw new ArgumentException($"Parameter value {labelParam.Split(':').Last()} is not valid." +
                         "Parameter value for 'label' must be a positive integer defining the index of the column holding the label values (First column index = 0!).");
 
-            return await initializer.SampleSet.LoadSampleSetAsync(samplesFileName, (float)testSamplesInPercent / 100, columnIndex_Label);
+            await initializer.SampleSet.LoadSampleSetAsync(samplesFileName, (float)testSamplesInPercent / 100, columnIndex_Label);
         }
 
         #endregion

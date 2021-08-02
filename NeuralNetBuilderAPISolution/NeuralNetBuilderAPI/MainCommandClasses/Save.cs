@@ -1,8 +1,5 @@
-﻿using NeuralNetBuilder;
-using Newtonsoft.Json;
-using System;
+﻿using Newtonsoft.Json;
 using System.Collections.Generic;
-using System.Linq;
 using System.Threading.Tasks;
 using static NeuralNetBuilderAPI.Program;   // To give this ICommandable access to Program. initializer/pathBuilder/paramBuilder. (Later: Use DI!)
 
@@ -17,8 +14,8 @@ namespace NeuralNetBuilderAPI.Commandables
             await Task.Run(async () =>
             {
                 LoadAndSaveCommand saveCommand = GetSubCommand<LoadAndSaveCommand>(parametersAndSubCommand, out var parameters);
-                CheckParameters(parameters, MainCommand.save, ConsoleInputCheck.EnsureNoOrSingleParameter);
-                var singleParameter = GetSingleParameter<PresetValue>(parameters);
+                CheckParameters(parameters, Show.InputInfo_Save, ConsoleInputCheck.EnsureNoOrSingleParameter);
+                var singleParameter = GetRestrictedParameter(parameters, PresetValue.append, Formatting.Indented, $"{MainCommand.save}");   // GetSingleParameter<PresetValue>(parameters);  // Include in GetValidParameter?
 
                 switch (saveCommand)
                 {
@@ -38,10 +35,10 @@ namespace NeuralNetBuilderAPI.Commandables
                         await SaveAllParametersAsync(singleParameter);
                         break;
                     case LoadAndSaveCommand.netpar:
-                        await SaveNetParametersAsync(singleParameter);
+                        await paramBuilder.SaveNetParametersAsync(singleParameter);
                         break;
                     case LoadAndSaveCommand.trainerpar:
-                        await SaveTrainerParametersAsync(singleParameter);
+                        await paramBuilder.SaveTrainerParametersAsync(singleParameter);
                         break;
                     default:
                         break;
@@ -53,34 +50,10 @@ namespace NeuralNetBuilderAPI.Commandables
 
         #region Sub Command methods
 
-        internal static async Task SaveAllParametersAsync(PresetValue indented = PresetValue.indented)
+        internal static async Task SaveAllParametersAsync(Formatting formatting)
         {
-            await SaveNetParametersAsync(indented);
-            await SaveTrainerParametersAsync(indented);
-        }
-        internal static async Task SaveNetParametersAsync(PresetValue indented = PresetValue.indented)
-        {
-            Formatting formatting = Formatting.None;
-
-            if (indented == PresetValue.indented)
-                formatting = Formatting.Indented;
-            else if (indented != PresetValue.undefined)
-                throw new ArgumentException($"{indented} is not a valid parameter for {MainCommand.save} {LoadAndSaveCommand.netpar}.\n" +
-                    $"When saving net parameters you can add parameter {PresetValue.indented} or no parameter at all.");
-
             await paramBuilder.SaveNetParametersAsync(formatting);
-        }
-        internal static async Task SaveTrainerParametersAsync(PresetValue indented = PresetValue.indented)
-        {
-            Formatting formatting = Formatting.None;
-
-            if (indented == PresetValue.indented)
-                formatting = Formatting.Indented;
-            else if (indented != PresetValue.no)
-                throw new ArgumentException($"{indented} is not a valid parameter for {MainCommand.save} {LoadAndSaveCommand.trainerpar}.\n" +
-                    $"When saving trainer parameters you can add parameter {PresetValue.indented} or no parameter at all.");
-
-            await paramBuilder.SaveNetParametersAsync(formatting);
+            await paramBuilder.SaveTrainerParametersAsync(formatting);
         }
         internal static async Task SaveSamplesNetAndTrainerAsync() // incl trained net but no trainer
         {

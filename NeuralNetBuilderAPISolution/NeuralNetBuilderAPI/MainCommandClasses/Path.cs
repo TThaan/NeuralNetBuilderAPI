@@ -14,8 +14,8 @@ namespace NeuralNetBuilderAPI.Commandables
             await Task.Run(() =>
             {
                 PathCommand pathCommand = GetSubCommand<PathCommand>(parametersAndSubCommand, out var parameters);
-                CheckParameters(parameters, MainCommand.path, ConsoleInputCheck.EnsureSingleParameter);
-                var singleParameter = GetSingleParameter<string>(parameters);
+                CheckParameters(parameters, Show.InputInfo_Path, ConsoleInputCheck.EnsureNoOrSingleParameter);
+                var singleParameter = parameters.FirstOrDefault();
 
                 switch (pathCommand)
                 {

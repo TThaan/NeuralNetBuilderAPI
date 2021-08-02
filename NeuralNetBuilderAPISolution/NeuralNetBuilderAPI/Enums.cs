@@ -65,9 +65,19 @@
     public enum ConsoleInputCheck
     {
         Undefined,
-        EnsureNoParameter,      // No parameter at all is allowed.
-        EnsureSingleParameter,  // No more nor less than one parameter is allowed.
+        EnsureNoParameter,          // No parameter at all is allowed.
+        EnsureSingleParameter,      // No more nor less than one parameter is allowed.
         EnsureNoOrSingleParameter,
-        // SubCommandIsDismissed   // No sub command is needed.
+        EnsureMultipleParameters,   // More than one parameter (incl layer id) are needed.
+        EnsureValidParameterNames
+        // SubCommandIsDismissed    // No sub command is needed.
+    }
+    public enum PresetValue
+    {
+        undefined,
+        shuffle,    // Makes the trainer shuffle the training samples before the first training
+        append,     // Appends a neuronal layer to the net automatically designed to fit the labels/targets of the sample set.
+        indented,   // Tells the Json serializer to save with parameter Formatting.Indented.
+        no
     }
 }

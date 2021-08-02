@@ -14,7 +14,7 @@ namespace NeuralNetBuilderAPI.Commandables
             await Task.Run(() =>
             {
                 LogCommand logCommand = GetSubCommand<LogCommand>(parametersAndSubCommand, out var parameters);
-                CheckParameters(parameters, MainCommand.log, ConsoleInputCheck.EnsureNoParameter);
+                CheckParameters(parameters, Show.InputInfo_Log, ConsoleInputCheck.EnsureNoParameter);
 
                 switch (logCommand)
                 {

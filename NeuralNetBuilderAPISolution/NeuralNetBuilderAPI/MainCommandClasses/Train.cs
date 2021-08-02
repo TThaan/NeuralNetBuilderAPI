@@ -1,6 +1,4 @@
-﻿using NeuralNetBuilder;
-using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Threading.Tasks;
 using static NeuralNetBuilderAPI.Program;   // To give this ICommandable access to Program. initializer/pathBuilder/paramBuilder. (Later: Use DI!)
 
@@ -15,8 +13,8 @@ namespace NeuralNetBuilderAPI.Commandables
             await Task.Run(async () =>
             {
                 TrainCommand trainCommand = GetSubCommand<TrainCommand>(parametersAndSubCommand, out var parameters);
-                CheckParameters(parameters, MainCommand.train, ConsoleInputCheck.EnsureNoOrSingleParameter);
-                var singleParameter = GetSingleParameter<PresetValue>(parameters);
+                CheckParameters(parameters, Show.InputInfo_Train, ConsoleInputCheck.EnsureNoOrSingleParameter);
+                var singleParameter = GetRestrictedParameter(parameters, PresetValue.shuffle, true, $"{MainCommand.train}");    // GetSingleParameter<PresetValue>(parameters);  // Include in GetValidParameter?
 
                 switch (trainCommand)
                 {
@@ -38,14 +36,8 @@ namespace NeuralNetBuilderAPI.Commandables
 
         #region Sub Command methods
 
-        /// <summary>
-        /// Valid parameters: Undefined, Shuffle
-        /// </summary>
-        internal static async Task TrainAsync(PresetValue shuffle = PresetValue.undefined)
+        internal static async Task TrainAsync(bool shuffle = false)
         {
-            if (shuffle != PresetValue.undefined && shuffle != PresetValue.shuffle)
-                throw new ArgumentException($"Parameter {shuffle} is not valid here. Use {PresetValue.shuffle} or no parameter.");
-
             stopwatch.Reset();
             stopwatch.Start();
             await initializer.TrainAsync(initializer.SampleSet, shuffle);
@@ -53,11 +45,8 @@ namespace NeuralNetBuilderAPI.Commandables
 
             await initializer.SaveTrainedNetAsync();
         }
-        internal async static Task ExampleTraining(PresetValue shuffle = PresetValue.undefined)
+        internal async static Task ExampleTraining(bool shuffle = false)
         {
-            if (shuffle != PresetValue.undefined && shuffle != PresetValue.shuffle)
-                throw new ArgumentException($"Parameter {shuffle} is not valid here. Use {PresetValue.shuffle} or no parameter.");
-
             pathBuilder.ResetPaths();
             //pathBuilder.FileName_Prefix = @"";
             //pathBuilder.FileName_Suffix = "_test.txt";

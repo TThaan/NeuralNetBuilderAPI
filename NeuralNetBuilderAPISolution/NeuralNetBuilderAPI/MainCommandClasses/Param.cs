@@ -14,7 +14,7 @@ namespace NeuralNetBuilderAPI.Commandables
             await Task.Run(() =>
             {
                 ParameterCommand parameterCommand = GetSubCommand<ParameterCommand>(parametersAndSubCommand, out var parameters);
-                // CheckParameters(parameters, MainCommand.param);
+                CheckParameters(parameters, Show.InputInfo_Param, ConsoleInputCheck.EnsureMultipleParameters);
                 int layerId = GetLayerId(parameters, out var parametersWithoutId);
 
                 switch (parameterCommand)

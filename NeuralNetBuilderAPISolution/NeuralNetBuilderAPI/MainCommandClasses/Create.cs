@@ -1,6 +1,4 @@
-﻿using NeuralNetBuilder;
-using System.Collections.Generic;
-using System.Linq;
+﻿using System.Collections.Generic;
 using System.Threading.Tasks;
 using static NeuralNetBuilderAPI.Program;   // To give this ICommandable access to Program. initializer/pathBuilder/paramBuilder. (Later: Use DI!)
 
@@ -15,8 +13,8 @@ namespace NeuralNetBuilderAPI.Commandables
             await Task.Run(async () =>
             {
                 CreateCommand createCommand = GetSubCommand<CreateCommand>(parametersAndSubCommand, out var parameters);
-                CheckParameters(parameters, MainCommand.create, ConsoleInputCheck.EnsureNoOrSingleParameter);
-                var singleParameter = GetSingleParameter<PresetValue>(parameters);
+                CheckParameters(parameters, Show.InputInfo_Create, ConsoleInputCheck.EnsureNoOrSingleParameter);
+                var singleParameter = GetRestrictedParameter(parameters, PresetValue.append, true, $"{MainCommand.create}"); // GetSingleParameter<PresetValue>(parameters);  // Include in GetValidParameter?
 
                 switch (createCommand)
                 {
@@ -56,14 +54,10 @@ namespace NeuralNetBuilderAPI.Commandables
 
             return true;
         }
-        internal static async Task<bool> CreateNetAndTrainerAsync()
+        internal static async Task CreateNetAndTrainerAsync()
         {
-            if (await initializer.CreateNetAsync())
-                return false;
-            if (await initializer.CreateTrainerAsync(initializer.SampleSet) == false)
-                return false;
-
-            return true;
+            await initializer.CreateNetAsync();
+            await initializer.CreateTrainerAsync(initializer.SampleSet);
         }
 
         #endregion

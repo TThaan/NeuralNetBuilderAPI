@@ -39,28 +39,65 @@ namespace NeuralNetBuilderAPI.Commandables
         }
         protected static TParam GetSingleParameter<TParam>(IEnumerable<string> parameters)
         {
-            string singleParameter = parameters.Count() == 0 ? null : parameters.ElementAt(0).GetParameterValue_String();
+            TParam result;
+            string singleParameter = parameters.Count() == 0 ? null : parameters.First().GetParameterValue_String();
 
-            TParam result = singleParameter == null ? default : (TParam)(object)singleParameter.ToEnum<PresetValue>();
+            if (typeof(TParam).IsEnum)
+                result = singleParameter == null ? default : (TParam)(object)singleParameter.ToEnum<PresetValue>();
+            else
+                result = singleParameter == null ? default : (TParam)(object)singleParameter;
+
+            return result;
+        }
+        /// <summary>
+        /// Make/Use a mapper between valid PresetValue[] values and T[] validParameters when you need more than one valid value?
+        /// </summary>
+        protected static T GetRestrictedParameter<T>(IEnumerable<string> parameters, PresetValue validValue, T validParameter, string source)//, PresetValue passed vs valid
+        {
+            T result = default;
+            PresetValue passedValue;
+
+            try
+            {
+                passedValue = GetSingleParameter<PresetValue>(parameters);
+            }
+            catch
+            {
+                throw new ArgumentException($"{GetSingleParameter<string>(parameters)} is not a valid parameter for {source}.\n" +
+                    $"Add parameter {PresetValue.indented} or no parameter at all.");
+            }
+
+            if (passedValue == validValue)
+                result = validParameter;
+            else if (passedValue != PresetValue.undefined)
+                throw new ArgumentException($"{passedValue} is not a valid parameter for {source}.\n" +
+                    $"Add parameter {PresetValue.indented} or no parameter at all.");
+
             return result;
         }
 
-        protected static void CheckParameters(IEnumerable<string> parameters, MainCommand mainCommand, params ConsoleInputCheck[] checks)
+        protected static void CheckParameters(IEnumerable<string> parameters, string inputInfo, params ConsoleInputCheck[] checks)   // Pass a list of needed/valid parameters to show in exception message?
         {
             // Check if there is no parameter at all.
             if (checks.Contains(ConsoleInputCheck.EnsureNoParameter) && parameters.Count() != 0)
-                throw new ArgumentException($"The main command {mainCommand} must be followed by one of the following sub commands: \n" +
-                    $"{Enum.GetNames(typeof(ShowCommand)).ToStringFromCollection()}.");
+                throw new ArgumentException($"No parameters are allowed here.\n" +
+                    $"{inputInfo}");
 
-            // check if there is exactly one single parameter.
+            // Check if there is exactly one single parameter.
             if (checks.Contains(ConsoleInputCheck.EnsureSingleParameter) && parameters.Count() != 1)
-                throw new ArgumentException($"The main command {mainCommand} must be followed by one of the following sub commands and nothing else: \n" +
-                    $"{Enum.GetNames(typeof(ShowCommand)).ToStringFromCollection()}.");
+                throw new ArgumentException($"A single parameter is needed and no more.\n" +
+                    $"{inputInfo}");
 
-            // check if there is no or one single parameter.
+            // Check if there is no or one single parameter.
             if (checks.Contains(ConsoleInputCheck.EnsureNoOrSingleParameter) && parameters.Count() > 1)
-                throw new ArgumentException($"The main command {mainCommand} must be followed by one of the following sub commands and nothing else: \n" +
-                    $"{Enum.GetNames(typeof(ShowCommand)).ToStringFromCollection()}.");
+                // task: Is the message true for 0 parameters?
+                throw new ArgumentException($"A single parameter is needed or none at all.\n" +
+                    $"{inputInfo}");
+
+            // Check if there are multiple parameters.
+            if (checks.Contains(ConsoleInputCheck.EnsureMultipleParameters) && parameters.Count() < 2)
+                throw new ArgumentException($"Some parameters are missing.\n" +
+                    $"{inputInfo}");
         }
     }
 }
