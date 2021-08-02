@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using static NeuralNetBuilderAPI.Program;   // To give this ICommandable access to Program. initializer/pathBuilder/paramBuilder. (Later: Use DI!)
 
@@ -47,16 +48,11 @@ namespace NeuralNetBuilderAPI.Commandables
         }
         internal async static Task ExampleTraining(bool shuffle = false)
         {
-            pathBuilder.ResetPaths();
-            //pathBuilder.FileName_Prefix = @"";
-            //pathBuilder.FileName_Suffix = "_test.txt";
-            pathBuilder.General = @"C:\Users\Jan_PC\Documents\_NeuralNetApp\Saves\Test2\";
-
             // Get samples
 
             if (!await initializer.SampleSet.LoadSampleSetAsync(pathBuilder.SampleSet, .1f, 0))
                 return;             // Always check if the loaded sample set suits the ... parameters!
-
+                        
             // Get net
 
             if (!await paramBuilder.LoadNetParametersAsync())
@@ -74,17 +70,13 @@ namespace NeuralNetBuilderAPI.Commandables
                 return;
             initializer.Trainer.TrainerStatusChanged += Trainer_StatusChanged_EventHandlingMethod;
 
-            // await initializer.Trainer.SampleSet.TrainSet.ShuffleAsync();
-
-            // Show Initialized Net
-
-            Show.ShowNet();
-
             // Activate logging
             Log.LogOn();
 
             // Train
 
+            Console.WriteLine("Press any button to proceed.");
+            Console.ReadKey();
             await TrainAsync(shuffle);
         }
 

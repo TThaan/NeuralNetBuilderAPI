@@ -259,10 +259,10 @@ namespace NeuralNetBuilderAPI.Commandables
                     $"     Parameter Names                           : {Enum.GetNames(typeof(ParameterName)).ToStringFromCollection(", ", 4, 49)}\n\n";
 
                 var activationTypes = Enum.GetNames(typeof(ActivationType));
-                result += $"     Set Activation Type of layer 3 :";
+                result += $"     Set Activation Type of layer 3 :\n";
                 for (int i = 0; i < activationTypes.Length; i++)
                 {
-                    result += $"     {activationTypes[i],-30} : {MainCommand.param} {ParameterCommand.set} act:{i} L3";
+                    result += $"     {activationTypes[i],-30} : {MainCommand.param} {ParameterCommand.set} act:{i} L3\n";
                 }
 
                 return result;
