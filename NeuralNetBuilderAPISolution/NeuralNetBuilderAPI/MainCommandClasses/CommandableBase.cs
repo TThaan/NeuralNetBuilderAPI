@@ -64,7 +64,7 @@ namespace NeuralNetBuilderAPI.Commandables
             catch
             {
                 throw new ArgumentException($"{GetSingleParameter<string>(parameters)} is not a valid parameter for {source}.\n" +
-                    $"Add parameter {PresetValue.indented} or no parameter at all.");
+                    $"Add parameter {validValue} or no parameter at all.");
             }
 
             if (passedValue == validValue)

@@ -4,6 +4,7 @@ using NeuralNetBuilder;
 using NeuralNetBuilder.Builders;
 using NeuralNetBuilderAPI.Commandables;
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
@@ -21,14 +22,7 @@ namespace NeuralNetBuilderAPI
         internal static ParameterBuilder paramBuilder;
         internal static Stopwatch stopwatch = new Stopwatch();
         internal static bool isInitializerStatusChangedEventActive = true;
-
-
-        //private static DeepLearningDataProvider.Builders.PathBuilder samplesPathBuilder;
-
-        //private static CommandNames commands;
-        private static string commandsPath = AppDomain.CurrentDomain.BaseDirectory + @"\CommandNames.txt";
-        private static bool isDataProviderChangedEventActive = true;
-        private static object input;
+        internal static bool isDataProviderChangedEventActive = true;
 
         #endregion
 

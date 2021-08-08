@@ -48,6 +48,10 @@ namespace NeuralNetBuilderAPI.Commandables
         }
         internal async static Task ExampleTraining(bool shuffle = false)
         {
+            // Set Debugging paths
+
+            pathBuilder.SetGeneralPath(System.IO.Path.Combine(pathBuilder.General, "Debugging"));
+
             // Get samples
 
             if (!await initializer.SampleSet.LoadSampleSetAsync(pathBuilder.SampleSet, .1f, 0))
@@ -66,7 +70,7 @@ namespace NeuralNetBuilderAPI.Commandables
 
             if (!await paramBuilder.LoadTrainerParametersAsync())
                 return;
-            if (!await initializer.CreateTrainerAsync(initializer.SampleSet))
+            if (!await initializer.CreateTrainerAsync())
                 return;
             initializer.Trainer.TrainerStatusChanged += Trainer_StatusChanged_EventHandlingMethod;
 
@@ -76,7 +80,7 @@ namespace NeuralNetBuilderAPI.Commandables
             // Train
 
             Console.WriteLine("Press any button to proceed.");
-            Console.ReadKey();
+            // Console.ReadKey();
             await TrainAsync(shuffle);
         }
 
