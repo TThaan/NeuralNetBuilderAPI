@@ -1,4 +1,5 @@
-﻿using System;
+﻿using DeepLearningDataProvider.SampleSetExtensionMethods;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -60,7 +61,7 @@ namespace NeuralNetBuilderAPI.Commandables
         }
         internal static async Task LoadSamplesAndNetAsync()
         {
-            await initializer.SampleSet.LoadSampleSetAsync(pathBuilder.SampleSet, .1f, 0);
+            await LoadSampleSetAsync(pathBuilder.SampleSet, null);
             await initializer.LoadNetAsync();
         }
         /// <summary>
@@ -73,10 +74,10 @@ namespace NeuralNetBuilderAPI.Commandables
             int testSamplesInPercent = 10, columnIndex_Label = 0;
 
             if (parameters.Count() > 0 && parameters.Any(
-                x => !x.Contains(ParameterName.test.ToString()) && !x.Contains(ParameterName.label.ToString())))
-                    throw new ArgumentException($"Only '{ParameterName.test}' and '{ParameterName.label}' are valid parameters for {MainCommand.load}");
+                x => !x.Contains(ParameterName.split.ToString()) && !x.Contains(ParameterName.label.ToString())))
+                    throw new ArgumentException($"Only '{ParameterName.split}' and '{ParameterName.label}' are valid parameters for {MainCommand.load}");
 
-            var testParam = parameters.SingleOrDefault(x => x.Contains(ParameterName.test.ToString()));
+            var testParam = parameters.SingleOrDefault(x => x.Contains(ParameterName.split.ToString()));
             if (testParam != null)
                 if (!int.TryParse(testParam.Split(':').Last(), out testSamplesInPercent))
                     throw new ArgumentException($"Parameter value {testParam.Split(':').Last()} is not valid." +
@@ -88,7 +89,8 @@ namespace NeuralNetBuilderAPI.Commandables
                     throw new ArgumentException($"Parameter value {labelParam.Split(':').Last()} is not valid." +
                         "Parameter value for 'label' must be a positive integer defining the index of the column holding the label values (First column index = 0!).");
 
-            await initializer.SampleSet.LoadSampleSetAsync(samplesFileName, (float)testSamplesInPercent / 100, columnIndex_Label);
+            decimal split = (decimal)testSamplesInPercent / 100; 
+            await initializer.SampleSet.LoadSampleSetAsync(samplesFileName, split, columnIndex_Label);
         }
 
         #endregion

@@ -1,4 +1,5 @@
-﻿using Newtonsoft.Json;
+﻿using DeepLearningDataProvider.SampleSetExtensionMethods;
+using Newtonsoft.Json;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using static NeuralNetBuilderAPI.Program;   // To give this ICommandable access to Program. initializer/pathBuilder/paramBuilder. (Later: Use DI!)

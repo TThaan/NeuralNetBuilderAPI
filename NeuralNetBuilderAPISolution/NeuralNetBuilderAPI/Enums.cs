@@ -60,7 +60,7 @@
         cost, epochs, Eta, dEta,
 
         L, // layer index,
-        test, label // "load samples parameters"
+        split, label, // "load samples parameters"
     }
     public enum ConsoleInputCheck
     {
@@ -69,7 +69,8 @@
         EnsureSingleParameter,      // No more nor less than one parameter is allowed.
         EnsureNoOrSingleParameter,
         EnsureMultipleParameters,   // More than one parameter (incl layer id) are needed.
-        EnsureValidParameterNames
+        EnsureValidParameterNames,
+        EnsureOneOrMoreParameters
         // SubCommandIsDismissed    // No sub command is needed.
     }
     public enum PresetValue

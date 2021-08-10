@@ -1,4 +1,5 @@
-﻿using System;
+﻿using DeepLearningDataProvider.SampleSetExtensionMethods;
+using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using static NeuralNetBuilderAPI.Program;   // To give this ICommandable access to Program. initializer/pathBuilder/paramBuilder. (Later: Use DI!)
@@ -14,7 +15,7 @@ namespace NeuralNetBuilderAPI.Commandables
             await Task.Run(() =>
             {
                 ParameterCommand parameterCommand = GetSubCommand<ParameterCommand>(parametersAndSubCommand, out var parameters);
-                CheckParameters(parameters, Show.InputInfo_Param, ConsoleInputCheck.EnsureMultipleParameters);
+                CheckParameters(parameters, Show.InputInfo_Param, ConsoleInputCheck.EnsureOneOrMoreParameters);
                 int layerId = GetLayerId(parameters, out var parametersWithoutId);
 
                 switch (parameterCommand)
@@ -77,6 +78,14 @@ namespace NeuralNetBuilderAPI.Commandables
                         //case ParameterName.bMaxGlob:
                         //    SetBiasMax_Globally(float.Parse(parameterValue));
                         //    break;
+                }
+
+                switch (name)
+                {
+                    case ParameterName.split:
+                        int testFractionInPercent = int.Parse(value);
+                        initializer.SampleSet.Split((decimal)testFractionInPercent / 100);
+                        break;
                 }
 
                 // Layer Parameters

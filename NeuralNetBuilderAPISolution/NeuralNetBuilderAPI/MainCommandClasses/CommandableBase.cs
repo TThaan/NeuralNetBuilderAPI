@@ -27,7 +27,10 @@ namespace NeuralNetBuilderAPI.Commandables
             string layerId_String = parameters.SingleOrDefault(x => Equals(x.Split(Separator_Parameter).First(), ParameterName.L.ToString()));
 
             if (layerId_String == null)
+            {
+                paramsWithoutLayerId = parameters.ToArray();
                 return -1;
+            }
             // throw new ArgumentException($"Cannot find a parameter for the layer index. (Expected: {ParameterName.L}:[index (positive integer)]).");
 
             if (!int.TryParse(layerId_String.Split(Separator_Parameter).Last(), out int result))
@@ -92,6 +95,11 @@ namespace NeuralNetBuilderAPI.Commandables
             if (checks.Contains(ConsoleInputCheck.EnsureNoOrSingleParameter) && parameters.Count() > 1)
                 // task: Is the message true for 0 parameters?
                 throw new ArgumentException($"A single parameter is needed or none at all.\n" +
+                    $"{inputInfo}");
+
+            // Check if there is at least one parameter.
+            if (checks.Contains(ConsoleInputCheck.EnsureOneOrMoreParameters) && parameters.Count() < 1)
+                throw new ArgumentException($"At least one parameter is missing.\n" +
                     $"{inputInfo}");
 
             // Check if there are multiple parameters.
