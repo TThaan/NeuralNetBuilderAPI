@@ -32,7 +32,8 @@
     public enum CreateCommand
     {
         Undefined,
-        all, net, trainer, samples, par, netpar, trainerpar
+        all, net, trainer, samples
+        // , par, netpar, trainerpar
     }
     public enum ParameterCommand
     {

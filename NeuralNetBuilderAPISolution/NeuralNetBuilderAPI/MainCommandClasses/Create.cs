@@ -28,15 +28,15 @@ namespace NeuralNetBuilderAPI.Commandables
                         if (await initializer.CreateTrainerAsync())
                             initializer.Trainer.TrainerStatusChanged += Trainer_StatusChanged_EventHandlingMethod;
                         break;
-                    case CreateCommand.par:
-                        CreateAllParameters();
-                        break;
-                    case CreateCommand.netpar:
-                        paramBuilder.CreateNetParameters();
-                        break;
-                    case CreateCommand.trainerpar:
-                        paramBuilder.CreateTrainerParameters();
-                        break;
+                    //case CreateCommand.par:
+                    //    CreateAllParameters();
+                    //    break;
+                    //case CreateCommand.netpar:
+                    //    paramBuilder.CreateNetParameters();
+                    //    break;
+                    //case CreateCommand.trainerpar:
+                    //    paramBuilder.CreateTrainerParameters();
+                    //    break;
                     default:
                         break;
                 }
@@ -47,13 +47,13 @@ namespace NeuralNetBuilderAPI.Commandables
 
         #region Sub Command methods
 
-        internal static bool CreateAllParameters()
-        {
-            paramBuilder.CreateNetParameters();
-            paramBuilder.CreateTrainerParameters();
+        //internal static bool CreateAllParameters()
+        //{
+        //    paramBuilder.CreateNetParameters();
+        //    paramBuilder.CreateTrainerParameters();
 
-            return true;
-        }
+        //    return true;
+        //}
         internal static async Task CreateNetAndTrainerAsync()
         {
             await initializer.CreateNetAsync();

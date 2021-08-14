@@ -39,10 +39,10 @@ namespace NeuralNetBuilderAPI.Commandables
                         await LoadAllParametersAsync();
                         break;
                     case LoadAndSaveCommand.netpar:
-                        await paramBuilder.LoadNetParametersAsync();
+                        await paramBuilder.LoadNetParametersAsync(pathBuilder.NetParameters);
                         break;
                     case LoadAndSaveCommand.trainerpar:
-                        await paramBuilder.LoadTrainerParametersAsync();
+                        await paramBuilder.LoadTrainerParametersAsync(pathBuilder.TrainerParameters);
                         break;
                     default:
                         break;
@@ -56,8 +56,8 @@ namespace NeuralNetBuilderAPI.Commandables
 
         internal static async Task LoadAllParametersAsync()
         {
-            await paramBuilder.LoadNetParametersAsync();
-            await paramBuilder.LoadTrainerParametersAsync();
+            await paramBuilder.LoadNetParametersAsync(pathBuilder.NetParameters);
+            await paramBuilder.LoadTrainerParametersAsync(pathBuilder.TrainerParameters);
         }
         internal static async Task LoadSamplesAndNetAsync()
         {

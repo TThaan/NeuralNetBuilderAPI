@@ -59,14 +59,14 @@ namespace NeuralNetBuilderAPI.Commandables
                         
             // Get net
 
-            await paramBuilder.LoadNetParametersAsync();
+            await paramBuilder.LoadNetParametersAsync(pathBuilder.NetParameters);
             await initializer.CreateNetAsync();
             // if (!await initializer.LoadNetAsync())
             //     return;        // Always check if the loaded initialized net suits loaded parameters!
 
             // Get trainer
 
-            await paramBuilder.LoadTrainerParametersAsync();
+            await paramBuilder.LoadTrainerParametersAsync(pathBuilder.TrainerParameters);
             await initializer.CreateTrainerAsync();
             initializer.Trainer.TrainerStatusChanged += Trainer_StatusChanged_EventHandlingMethod;
 

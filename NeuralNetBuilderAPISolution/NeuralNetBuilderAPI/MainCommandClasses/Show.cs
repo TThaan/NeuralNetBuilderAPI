@@ -219,9 +219,9 @@ namespace NeuralNetBuilderAPI.Commandables
                 //$"     Use general path for all files and default names : {MainCommand.path} {PathCommand.UseGeneralPathAndDefaultNames}\n" +
                 $"     Reset general path and use default names  : {MainCommand.path} {PathCommand.reset}\n\n";
         internal static string InputInfo_Create =>
-                $"     Create all parameters            : {MainCommand.create} {CreateCommand.par}\n" +
-                $"     Create the net parameters        : {MainCommand.create} {CreateCommand.netpar}\n" +
-                $"     Create the trainer parameters    : {MainCommand.create} {CreateCommand.trainerpar}\n" +
+                //$"     Create all parameters            : {MainCommand.create} {CreateCommand.par}\n" +
+                //$"     Create the net parameters        : {MainCommand.create} {CreateCommand.netpar}\n" +
+                //$"     Create the trainer parameters    : {MainCommand.create} {CreateCommand.trainerpar}\n" +
                 $"     Create sample set, net & trainer : {MainCommand.create} {CreateCommand.all}\n" +
                 $"     Create sample set                : {MainCommand.create} {CreateCommand.samples}\n" +
                 $"     Create the net                   : {MainCommand.create} {CreateCommand.net} [opt: append]\n" +

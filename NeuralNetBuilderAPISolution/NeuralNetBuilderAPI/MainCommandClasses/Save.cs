@@ -36,10 +36,10 @@ namespace NeuralNetBuilderAPI.Commandables
                         await SaveAllParametersAsync(singleParameter);
                         break;
                     case LoadAndSaveCommand.netpar:
-                        await paramBuilder.SaveNetParametersAsync(singleParameter);
+                        await paramBuilder.SaveNetParametersAsync(pathBuilder.NetParameters, singleParameter);
                         break;
                     case LoadAndSaveCommand.trainerpar:
-                        await paramBuilder.SaveTrainerParametersAsync(singleParameter);
+                        await paramBuilder.SaveTrainerParametersAsync(pathBuilder.TrainerParameters, singleParameter);
                         break;
                     default:
                         break;
@@ -53,8 +53,8 @@ namespace NeuralNetBuilderAPI.Commandables
 
         internal static async Task SaveAllParametersAsync(Formatting formatting)
         {
-            await paramBuilder.SaveNetParametersAsync(formatting);
-            await paramBuilder.SaveTrainerParametersAsync(formatting);
+            await paramBuilder.SaveNetParametersAsync(pathBuilder.NetParameters, formatting);
+            await paramBuilder.SaveTrainerParametersAsync(pathBuilder.TrainerParameters, formatting);
         }
         internal static async Task SaveSamplesNetAndTrainerAsync() // incl trained net but no trainer
         {
