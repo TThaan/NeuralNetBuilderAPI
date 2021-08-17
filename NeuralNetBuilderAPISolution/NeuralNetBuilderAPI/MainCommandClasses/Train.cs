@@ -45,7 +45,7 @@ namespace NeuralNetBuilderAPI.Commandables
             await initializer.TrainAsync(initializer.SampleSet, shuffle);
             stopwatch.Stop();
 
-            await initializer.SaveTrainedNetAsync();
+            // await initializer.SaveTrainedNetAsync();
         }
         internal async static Task ExampleTraining(bool shuffle = false)
         {
@@ -68,7 +68,7 @@ namespace NeuralNetBuilderAPI.Commandables
 
             await paramBuilder.LoadTrainerParametersAsync(pathBuilder.TrainerParameters);
             await initializer.CreateTrainerAsync();
-            initializer.Trainer.TrainerStatusChanged += Trainer_StatusChanged_EventHandlingMethod;
+            initializer.Trainer.TrainerStatusChanged += Trainer_StatusChanged;
 
             // Activate logging
             Log.LogOn();

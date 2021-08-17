@@ -27,10 +27,10 @@ namespace NeuralNetBuilderAPI.Commandables
                         await LoadSamplesAndNetAsync();
                         break;
                     case LoadAndSaveCommand.net0:
-                        await initializer.LoadNetAsync();
+                        await initializer.LoadNetAsync(pathBuilder.InitializedNet);
                         break;
                     case LoadAndSaveCommand.net1:
-                        await initializer.LoadTrainedNetAsync();
+                        await initializer.LoadTrainedNetAsync(pathBuilder.TrainedNet);
                         break;
                     case LoadAndSaveCommand.samples:
                         await LoadSampleSetAsync(pathBuilder.SampleSet, parameters);
@@ -62,7 +62,7 @@ namespace NeuralNetBuilderAPI.Commandables
         internal static async Task LoadSamplesAndNetAsync()
         {
             await LoadSampleSetAsync(pathBuilder.SampleSet, null);
-            await initializer.LoadNetAsync();
+            await initializer.LoadNetAsync(pathBuilder.InitializedNet);
         }
         /// <summary>
         /// Default values if you parameters miss an input helper:

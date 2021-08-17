@@ -24,10 +24,10 @@ namespace NeuralNetBuilderAPI.Commandables
                         await SaveSamplesNetAndTrainerAsync();
                         break;
                     case LoadAndSaveCommand.net0:
-                        await initializer.SaveInitializedNetAsync();
+                        await initializer.SaveInitializedNetAsync(pathBuilder.InitializedNet);
                         break;
                     case LoadAndSaveCommand.net1:
-                        await initializer.SaveTrainedNetAsync();
+                        await initializer.SaveTrainedNetAsync(pathBuilder.TrainedNet);
                         break;
                     case LoadAndSaveCommand.samples:
                         await initializer.SampleSet.SaveSampleSetAsync(pathBuilder.SampleSet);
@@ -59,8 +59,8 @@ namespace NeuralNetBuilderAPI.Commandables
         internal static async Task SaveSamplesNetAndTrainerAsync() // incl trained net but no trainer
         {
             await initializer.SampleSet.SaveSampleSetAsync(pathBuilder.SampleSet);
-            await initializer.SaveInitializedNetAsync();
-            await initializer.SaveTrainedNetAsync();
+            await initializer.SaveInitializedNetAsync(pathBuilder.InitializedNet);
+            await initializer.SaveTrainedNetAsync(pathBuilder.TrainedNet);
         }
 
         #endregion

@@ -62,8 +62,8 @@ namespace NeuralNetBuilderAPI.Commandables
             Console.WriteLine("\n" +
                 $"     Current Settings:\n\n" +
                 $"     General path    : {(pathBuilder.General == default ? " - " : pathBuilder.General)}\n" +
-                $"     General prefix  : {(pathBuilder.FileName_Prefix == default ? " - " : pathBuilder.FileName_Prefix)}\n" +
-                $"     General suffix  : {(pathBuilder.FileName_Suffix == default ? " - " : pathBuilder.FileName_Suffix)}\n\n" +
+                $"     General prefix  : {(pathBuilder.BasicName_Prefix == default ? " - " : pathBuilder.BasicName_Prefix)}\n" +
+                $"     General suffix  : {(pathBuilder.BasicName_Suffix == default ? " - " : pathBuilder.BasicName_Suffix)}\n\n" +
 
                 $"     Path to net parameters     : {(pathBuilder.NetParameters == default ? " - " : pathBuilder.NetParameters)}\n" +
                 $"     Path to trainer parameters : {(pathBuilder.TrainerParameters == default ? " - " : pathBuilder.TrainerParameters)}\n" +

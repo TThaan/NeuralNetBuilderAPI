@@ -98,6 +98,7 @@ namespace NeuralNetBuilderAPI.Commandables
                     case ParameterName.act:
                         paramBuilder.SetActivationTypeAtLayer(layerId, int.Parse(value));
                         return;
+                        // ta: Changing N or just add/remove layers?
                     case ParameterName.N:
                         paramBuilder.SetNeuronsAtLayer(layerId, int.Parse(value));
                         return;

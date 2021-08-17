@@ -35,13 +35,14 @@ namespace NeuralNetBuilderAPI
 
             #endregion
 
+            pathBuilder = new PathBuilder();
+            pathBuilder.StatusChanged += PathBuilder_StatusChanged;
             initializer = new Initializer();
-            initializer.InitializerStatusChanged += NetbuilderChanged_EventHandlingMethod;
-            pathBuilder = initializer.Paths;            
+            initializer.StatusChanged += Initializer_StatusChanged;
             paramBuilder = initializer.ParameterBuilder;
 
             initializer.SampleSet = new SampleSet();
-            initializer.SampleSet.DataProviderChanged += DataProviderChanged_EventHandlingMethod;
+            initializer.SampleSet.DataProviderChanged += DataProvider_Changed;
 
             Show.ShowHelp();
             Show.ShowSettings();
@@ -73,21 +74,27 @@ namespace NeuralNetBuilderAPI
 
         #region event handling methods
 
-        private static void NetbuilderChanged_EventHandlingMethod(object initializer, InitializerStatusChangedEventArgs e)
+        private static void Initializer_StatusChanged(object initializer, StatusChangedEventArgs e)
         {
             if(isInitializerStatusChangedEventActive)
                 Console.WriteLine($"{e.Info}");
         }
-        private static void DataProviderChanged_EventHandlingMethod(object initializer, DataProviderChangedEventArgs e)
+        private static void PathBuilder_StatusChanged(object initializer, StatusChangedEventArgs e)
         {
-            if(isDataProviderChangedEventActive)
-                Console.WriteLine($"{e.Info}");
+            // if (isInitializerStatusChangedEventActive)
+            Console.WriteLine($"{e.Info}");
         }
-        // public to give access to Create class. (Later: Use DI.)
-        public static void Trainer_StatusChanged_EventHandlingMethod(object trainer, TrainerStatusChangedEventArgs e)
+        // private
+        public static void Trainer_StatusChanged(object trainer, TrainerStatusChangedEventArgs e)
         {
             Console.WriteLine($"{stopwatch.ElapsedMilliseconds,10}: {e.Info}");
         }
+        private static void DataProvider_Changed(object initializer, DataProviderChangedEventArgs e)
+        {
+            if (isDataProviderChangedEventActive)
+                Console.WriteLine($"{e.Info}");
+        }
+        // public to give access to Create class. (Later: Use DI.)
 
         #endregion
     }
