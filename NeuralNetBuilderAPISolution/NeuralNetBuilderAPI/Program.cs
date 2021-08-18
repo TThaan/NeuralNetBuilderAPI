@@ -36,11 +36,10 @@ namespace NeuralNetBuilderAPI
 
             #endregion
 
-            pathBuilder = new PathBuilder();
-            pathBuilder.PropertyChanged += PathBuilder_PropertyChanged;
             initializer = new Initializer();
             initializer.PropertyChanged += Initializer_PropertyChanged;
             paramBuilder = initializer.ParameterBuilder;
+            pathBuilder = initializer.PathBuilder;
 
             initializer.SampleSet = new SampleSet();
             initializer.SampleSet.DataProviderChanged += DataProvider_Changed;
