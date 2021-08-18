@@ -4,6 +4,7 @@ using NeuralNetBuilder;
 using NeuralNetBuilder.Builders;
 using NeuralNetBuilderAPI.Commandables;
 using System;
+using System.ComponentModel;
 using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
@@ -20,7 +21,7 @@ namespace NeuralNetBuilderAPI
         internal static PathBuilder pathBuilder;
         internal static ParameterBuilder paramBuilder;
         internal static Stopwatch stopwatch = new Stopwatch();
-        internal static bool isInitializerStatusChangedEventActive = true;
+        internal static bool isInitializerPropertyChangedEventActive = true;
         internal static bool isDataProviderChangedEventActive = true;
 
         #endregion
@@ -36,9 +37,9 @@ namespace NeuralNetBuilderAPI
             #endregion
 
             pathBuilder = new PathBuilder();
-            pathBuilder.StatusChanged += PathBuilder_StatusChanged;
+            pathBuilder.PropertyChanged += PathBuilder_PropertyChanged;
             initializer = new Initializer();
-            initializer.StatusChanged += Initializer_StatusChanged;
+            initializer.PropertyChanged += Initializer_PropertyChanged;
             paramBuilder = initializer.ParameterBuilder;
 
             initializer.SampleSet = new SampleSet();
@@ -74,15 +75,15 @@ namespace NeuralNetBuilderAPI
 
         #region event handling methods
 
-        private static void Initializer_StatusChanged(object initializer, StatusChangedEventArgs e)
+        private static void Initializer_PropertyChanged(object sender, PropertyChangedEventArgs e)
         {
-            if(isInitializerStatusChangedEventActive)
-                Console.WriteLine($"{e.Info}");
+            if(isInitializerPropertyChangedEventActive && e.PropertyName == nameof(initializer.Status))
+                Console.WriteLine($"{initializer.Status}");
         }
-        private static void PathBuilder_StatusChanged(object initializer, StatusChangedEventArgs e)
+        private static void PathBuilder_PropertyChanged(object sender, PropertyChangedEventArgs e)
         {
             // if (isInitializerStatusChangedEventActive)
-            Console.WriteLine($"{e.Info}");
+            Console.WriteLine($"{initializer.Status}");
         }
         // private
         public static void Trainer_StatusChanged(object trainer, TrainerStatusChangedEventArgs e)

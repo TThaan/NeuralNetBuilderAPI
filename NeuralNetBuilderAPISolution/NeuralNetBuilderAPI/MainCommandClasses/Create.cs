@@ -25,8 +25,8 @@ namespace NeuralNetBuilderAPI.Commandables
                         await initializer.CreateNetAsync(singleParameter);
                         break;
                     case CreateCommand.trainer:
-                        if (await initializer.CreateTrainerAsync())
-                            initializer.Trainer.TrainerStatusChanged += Trainer_StatusChanged;
+                        await initializer.CreateTrainerAsync();
+                        initializer.Trainer.TrainerStatusChanged += Trainer_StatusChanged;
                         break;
                     //case CreateCommand.par:
                     //    CreateAllParameters();

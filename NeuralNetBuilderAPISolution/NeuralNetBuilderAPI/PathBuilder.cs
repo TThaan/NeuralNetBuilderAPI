@@ -1,8 +1,9 @@
-﻿using NeuralNetBuilder;
-using System;
+﻿using System;
+using System.ComponentModel;
 using System.IO;
 using System.Linq;
 using System.Runtime.CompilerServices;
+using static NeuralNetBuilder.Helpers;
 
 namespace NeuralNetBuilderAPI
 {
@@ -10,11 +11,11 @@ namespace NeuralNetBuilderAPI
     // You can access them from the ConsoleApi, AIDemoUI or use them as Wpf's 'Command-Executes'.
     // They already do or will (soon) provide an event to notify about the (succeeded) data changes.
 
-    public class PathBuilder : INotifyStatusChanged
+    public class PathBuilder : INotifyPropertyChanged
     {
         #region fields & ctor
 
-        private string netParameters, trainerParameters, log, initializedNet, sampleSet, trainedNet;
+        private string netParameters, trainerParameters, log, initializedNet, sampleSet, trainedNet, status;
 
         #endregion
 
@@ -91,32 +92,41 @@ namespace NeuralNetBuilderAPI
             set { trainedNet = value; }
         }
 
+        public string Status
+        {
+            get
+            {
+                return status;
+            }
+            set 
+            { 
+                status = value;
+                OnPropertyChanged();
+            }
+        }
+
         #endregion
 
         #region methods
 
-        public bool SetGeneralPath(string path)
+        public void SetGeneralPath(string path)
         {
             if (!Directory.Exists(path))
-            {
-                OnStatusChanged("Path not found!");
-                return false;
-            }
+                ThrowFormattedException(new FileNotFoundException($"Path {path} not found."));
 
             General = path;
-            OnStatusChanged("General path is set.");
+            Status = "General path is set.";
             UseGeneralPathAndDefaultNames();    // no default names here?
-            return true;
         }
         public void SetFileNamePrefix(string prefix)
         {
             BasicName_Prefix = prefix;
-            OnStatusChanged($"The file name has prefix {prefix} now.");
+            Status = $"The file name has prefix {prefix} now.";
         }
         public void SetFileNameSuffix(string suffix)
         {
             BasicName_Suffix = suffix;
-            OnStatusChanged($"The file name has suffix {suffix} now.");
+            Status = $"The file name has suffix {suffix} now.";
         }
         public void ResetPaths()
         {
@@ -130,7 +140,7 @@ namespace NeuralNetBuilderAPI
 
             sampleSet = string.Empty;
 
-            OnStatusChanged($"Path for all files has been reset.");
+            Status = $"Path for all files has been reset.";
         }
         public void UseGeneralPathAndDefaultNames()
         {
@@ -143,65 +153,61 @@ namespace NeuralNetBuilderAPI
             SetSampleSetPath(Path.Combine(General, BasicName_Prefix, BasicName_SampleSet + BasicName_Suffix));
         }
 
-        #region redundant? (thus StatChgd?)
+        #region redundant?
 
         public void SetInitializedNetPath(string path)
         {
             InitializedNet = path;
-            OnStatusChanged("Path to the initialized net has been set.");
+            Status = "Path to the initialized net has been set.";
         }
         public void SetTrainedNetPath(string path)
         {
             TrainedNet = path;
-            OnStatusChanged("Path to the trained net has been set.");
+            Status = "Path to the trained net has been set.";
         }
         public void SetSampleSetPath(string path)
         {
             SampleSet = path;
-            OnStatusChanged("Path to the sample set has been set.");
+            Status = "Path to the sample set has been set.";
         }
         public void SetNetParametersPath(string path)
         {
             NetParameters = path;
-            OnStatusChanged("Path to net parameters has been set.");
+            Status = "Path to net parameters has been set.";
         }
         public void SetTrainerParametersPath(string path)
         {
             TrainerParameters = path;
-            OnStatusChanged("Path to trainer parameters has been set.");
+            Status = "Path to trainer parameters has been set.";
         }
         public void SetLogPath(string path)
         {
             Log = path;
-            OnStatusChanged("Path to the log file has been set.");
+            Status = "Path to the log file has been set.";
         }
 
         #endregion
 
         #endregion
 
-        #region INotifyStatusChanged
+        #region INotifyPropertyChanged
 
-        private event StatusChangedEventHandler statusChanged;
-        public event StatusChangedEventHandler StatusChanged
+        private event PropertyChangedEventHandler propertyChanged;
+        public event PropertyChangedEventHandler PropertyChanged
         {
             add
             {
-                if (statusChanged == null || !statusChanged.GetInvocationList().Contains(value))
-                    statusChanged += value;
+                if (propertyChanged == null || !propertyChanged.GetInvocationList().Contains(value))
+                    propertyChanged += value;
                 // else Log when debugging.
 
             }
-            remove { statusChanged -= value; }
+            remove { propertyChanged -= value; }
         }
-        public bool IsStatusChangedNull => statusChanged == null;
-        public void InitializerAssistant_StatusChanged(object sender, StatusChangedEventArgs e)
+        public bool IsPropertyChangedNull => propertyChanged == null;
+        protected virtual void OnPropertyChanged([CallerMemberName] string propertyName = null)
         {
-            OnStatusChanged(e.Info);
-        }
-        protected virtual void OnStatusChanged([CallerMemberName] string propertyName = null)
-        {
-            statusChanged?.Invoke(this, new StatusChangedEventArgs(propertyName));
+            propertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
         }
 
         #endregion

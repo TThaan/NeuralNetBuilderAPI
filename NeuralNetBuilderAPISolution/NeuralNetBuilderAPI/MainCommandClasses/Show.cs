@@ -57,7 +57,7 @@ namespace NeuralNetBuilderAPI.Commandables
 
             // Prevent double output about 'X' is null (from initlializer property) plus 'X' is unset here
             // by deactivating the event handling method temporarily.
-            isInitializerStatusChangedEventActive = false;
+            isInitializerPropertyChangedEventActive = false;
 
             Console.WriteLine("\n" +
                 $"     Current Settings:\n\n" +
@@ -81,7 +81,7 @@ namespace NeuralNetBuilderAPI.Commandables
                 $"     Logging is {(initializer.IsLogged ? "on." : "off.")}\n\n");
 
             // Reactivate the event handling method again.
-            isInitializerStatusChangedEventActive = true;
+            isInitializerPropertyChangedEventActive = true;
         }
         internal static void ShowHelp()
         {
