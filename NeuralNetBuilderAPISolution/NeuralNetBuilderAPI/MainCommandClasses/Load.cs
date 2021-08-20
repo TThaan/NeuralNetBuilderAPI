@@ -90,7 +90,7 @@ namespace NeuralNetBuilderAPI.Commandables
                         "Parameter value for 'label' must be a positive integer defining the index of the column holding the label values (First column index = 0!).");
 
             decimal split = (decimal)testSamplesInPercent / 100; 
-            await initializer.SampleSet.LoadSampleSetAsync(samplesFileName, split, columnIndex_Label);
+            await initializer.SampleSet.LoadAsync(samplesFileName, split, columnIndex_Label);
         }
 
         #endregion

@@ -55,7 +55,7 @@ namespace NeuralNetBuilderAPI.Commandables
 
             // Get samples
 
-            await initializer.SampleSet.LoadSampleSetAsync(pathBuilder.SampleSet, .1m, 0);
+            await initializer.SampleSet.LoadAsync(pathBuilder.SampleSet, .1m, 0);
                         
             // Get net
 
@@ -71,7 +71,7 @@ namespace NeuralNetBuilderAPI.Commandables
             initializer.Trainer.TrainerStatusChanged += Trainer_StatusChanged;
 
             // Activate logging
-            Log.LogOn();
+            isLogged = true;
 
             // Train
 

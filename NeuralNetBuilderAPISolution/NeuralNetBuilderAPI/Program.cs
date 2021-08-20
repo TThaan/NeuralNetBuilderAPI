@@ -21,6 +21,7 @@ namespace NeuralNetBuilderAPI
         internal static PathBuilder pathBuilder;
         internal static ParameterBuilder paramBuilder;
         internal static Stopwatch stopwatch = new Stopwatch();
+        internal static bool isLogged = false;
         internal static bool isInitializerPropertyChangedEventActive = true;
         internal static bool isDataProviderChangedEventActive = true;
 

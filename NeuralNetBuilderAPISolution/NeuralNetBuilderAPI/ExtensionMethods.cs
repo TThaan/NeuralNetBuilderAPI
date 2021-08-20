@@ -7,7 +7,7 @@ using static NeuralNetBuilderAPI.GlobalConstants;
 
 namespace NeuralNetBuilderAPI
 {
-    public static class ExtensionMethods
+    internal static class ExtensionMethods
     {
         public static ParameterName GetParameterName(this string parameter, char separator = Separator_Parameter)
         {

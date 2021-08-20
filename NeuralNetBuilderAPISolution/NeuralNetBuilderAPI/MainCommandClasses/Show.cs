@@ -1,4 +1,5 @@
-﻿using NeuralNetBuilder;
+﻿using DeepLearningDataProvider.SampleSetExtensions;
+using NeuralNetBuilder;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -78,7 +79,7 @@ namespace NeuralNetBuilderAPI.Commandables
                 $"     Net                : {(initializer.Net == null ? " - " : "set")}\n" +
                 $"     Trainer            : {(initializer.Trainer == null ? " - " : "set")}\n\n" +
 
-                $"     Logging is {(initializer.IsLogged ? "on." : "off.")}\n\n");
+                $"     Logging is {(isLogged ? "on." : "off.")}\n\n");
 
             // Reactivate the event handling method again.
             isInitializerPropertyChangedEventActive = true;
@@ -170,30 +171,33 @@ namespace NeuralNetBuilderAPI.Commandables
             if (initializer.SampleSet == null || initializer.SampleSet.TrainSet == null || initializer.SampleSet.TestSet == null)
                 throw new ArgumentException("     Sample set is not set yet. Or it is missing training samples or test samples.");
 
-            Console.WriteLine(
-                $"     Training Samples : {initializer.SampleSet.TrainSet.Count()}\n" +
-                $"     Test Samples     : {initializer.SampleSet.TestSet.Count()}\n" +
-                $"     Labels / Targets : {initializer.SampleSet.Targets.Count()}\n");
+            Console.WriteLine(initializer.SampleSet.GetPreviewOfSamples());
+            Console.WriteLine(initializer.SampleSet.GetPreviewOfTargets(100));
 
-            Console.WriteLine("     First 5 training samples:\n");
-            for (int i = 0; i <= 5; i++)
-            {
-                Console.WriteLine($"     Label    : {initializer.SampleSet.TrainSet[i].Label}");
-                Console.WriteLine($"     Features : {initializer.SampleSet.TrainSet[i].Features.ToStringFromCollection(", ", 4, 5)}");
-            }
+            //Console.WriteLine(
+            //    $"     Training Samples : {initializer.SampleSet.TrainSet.Count()}\n" +
+            //    $"     Test Samples     : {initializer.SampleSet.TestSet.Count()}\n" +
+            //    $"     Labels / Targets : {initializer.SampleSet.Targets.Count()}\n");
 
-            var labels = initializer.SampleSet.Targets.Keys.ToArray();
+            //Console.WriteLine("     First 5 training samples:\n");
+            //for (int i = 0; i <= 5; i++)
+            //{
+            //    Console.WriteLine($"     Label    : {initializer.SampleSet.TrainSet[i].Label}");
+            //    Console.WriteLine($"     Features : {initializer.SampleSet.TrainSet[i].Features.ToStringFromCollection(", ", 4, 5)}");
+            //}
 
-            Console.WriteLine("\n     First 100 labels & targets:\n");
-            foreach (var kvp in initializer.SampleSet.Targets)
-            {
-                Console.WriteLine($"     Label   : {kvp.Key}");
-                Console.WriteLine($"     Target  : {kvp.Value.ToStringFromCollection(", ", 20, 5)}");
+            //var labels = initializer.SampleSet.Targets.Keys.ToArray();
 
-                int index = Array.IndexOf(labels, kvp.Key);
-                if (index >= 100)
-                    break;
-            }
+            //Console.WriteLine("\n     First 100 labels & targets:\n");
+            //foreach (var kvp in initializer.SampleSet.Targets)
+            //{
+            //    Console.WriteLine($"     Label   : {kvp.Key}");
+            //    Console.WriteLine($"     Target  : {kvp.Value.ToStringFromCollection(", ", 20, 5)}");
+
+            //    int index = Array.IndexOf(labels, kvp.Key);
+            //    if (index >= 100)
+            //        break;
+            //}
         }
 
         internal static string InputInfo_Show =>

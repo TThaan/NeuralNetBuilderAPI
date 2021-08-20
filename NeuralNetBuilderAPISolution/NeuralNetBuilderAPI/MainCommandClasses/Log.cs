@@ -36,12 +36,12 @@ namespace NeuralNetBuilderAPI.Commandables
 
         internal static void LogOn()
         {
-            initializer.IsLogged = true;
+            isLogged = true;
             Console.WriteLine("Logging activated.");
         }
         internal static void LogOff()
         {
-            initializer.IsLogged = false;
+            isLogged = false;
             Console.WriteLine("Logging deactivated.");
         }
 
