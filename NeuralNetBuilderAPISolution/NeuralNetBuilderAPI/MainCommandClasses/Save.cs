@@ -1,4 +1,4 @@
-﻿using DeepLearningDataProvider.SampleSetExtensionMethods;
+﻿using DeepLearningDataProvider.SampleSetHelpers;
 using Newtonsoft.Json;
 using System.Collections.Generic;
 using System.Threading.Tasks;
@@ -30,7 +30,7 @@ namespace NeuralNetBuilderAPI.Commandables
                         await initializer.SaveTrainedNetAsync(pathBuilder.TrainedNet);
                         break;
                     case LoadAndSaveCommand.samples:
-                        await initializer.SampleSet.SaveAsync(pathBuilder.SampleSet);
+                        await initializer.SaveSampleSetAsync(pathBuilder.SampleSet);
                         break;
                     case LoadAndSaveCommand.par:
                         await SaveAllParametersAsync(singleParameter);
@@ -58,7 +58,7 @@ namespace NeuralNetBuilderAPI.Commandables
         }
         internal static async Task SaveSamplesNetAndTrainerAsync() // incl trained net but no trainer
         {
-            await initializer.SampleSet.SaveAsync(pathBuilder.SampleSet);
+            await initializer.SaveSampleSetAsync(pathBuilder.SampleSet);
             await initializer.SaveInitializedNetAsync(pathBuilder.InitializedNet);
             await initializer.SaveTrainedNetAsync(pathBuilder.TrainedNet);
         }

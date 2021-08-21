@@ -25,7 +25,7 @@ namespace NeuralNetBuilderAPI.Commandables
                         await initializer.CreateNetAsync(singleParameter);
                         break;
                     case CreateCommand.trainer:
-                        await initializer.CreateTrainerAsync();
+                        initializer.CreateTrainer();
                         initializer.Trainer.TrainerStatusChanged += Trainer_StatusChanged;
                         break;
                     //case CreateCommand.par:
@@ -57,7 +57,7 @@ namespace NeuralNetBuilderAPI.Commandables
         internal static async Task CreateNetAndTrainerAsync()
         {
             await initializer.CreateNetAsync();
-            await initializer.CreateTrainerAsync();
+            initializer.CreateTrainer();
         }
 
         #endregion

@@ -1,4 +1,4 @@
-﻿using DeepLearningDataProvider.SampleSetExtensionMethods;
+﻿using DeepLearningDataProvider.SampleSetHelpers;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -90,7 +90,7 @@ namespace NeuralNetBuilderAPI.Commandables
                         "Parameter value for 'label' must be a positive integer defining the index of the column holding the label values (First column index = 0!).");
 
             decimal split = (decimal)testSamplesInPercent / 100; 
-            await initializer.SampleSet.LoadAsync(samplesFileName, split, columnIndex_Label);
+            await initializer.LoadSampleSetAsync(samplesFileName, split, columnIndex_Label, null);
         }
 
         #endregion

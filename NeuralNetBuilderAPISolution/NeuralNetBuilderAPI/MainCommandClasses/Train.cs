@@ -1,4 +1,4 @@
-﻿using DeepLearningDataProvider.SampleSetExtensionMethods;
+﻿using DeepLearningDataProvider.SampleSetHelpers;
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
@@ -42,7 +42,7 @@ namespace NeuralNetBuilderAPI.Commandables
         {
             stopwatch.Reset();
             stopwatch.Start();
-            await initializer.TrainAsync(initializer.SampleSet, shuffle);
+            await initializer.TrainAsync(shuffle);
             stopwatch.Stop();
 
             // await initializer.SaveTrainedNetAsync();
@@ -55,7 +55,7 @@ namespace NeuralNetBuilderAPI.Commandables
 
             // Get samples
 
-            await initializer.SampleSet.LoadAsync(pathBuilder.SampleSet, .1m, 0);
+            await initializer.LoadSampleSetAsync(pathBuilder.SampleSet, .1m, 0, null);
                         
             // Get net
 
@@ -67,7 +67,7 @@ namespace NeuralNetBuilderAPI.Commandables
             // Get trainer
 
             await paramBuilder.LoadTrainerParametersAsync(pathBuilder.TrainerParameters);
-            await initializer.CreateTrainerAsync();
+            initializer.CreateTrainer();
             initializer.Trainer.TrainerStatusChanged += Trainer_StatusChanged;
 
             // Activate logging

@@ -9,6 +9,7 @@ using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
 using static NeuralNetBuilderAPI.GlobalConstants;
+using static NeuralNetBuilderAPI.Helpers;
 
 namespace NeuralNetBuilderAPI
 {
@@ -66,7 +67,7 @@ namespace NeuralNetBuilderAPI
                 var comm = mainCommand.ToCommandableBase();
                 await comm.Execute(parameters);
             }
-            catch (Exception e) { Console.WriteLine(e.Message); }
+            catch (Exception e) { Console.WriteLine(GetFormattedExceptionMessage(e)); }
 
             await ExecuteConsoleCommands();
         }

@@ -1,4 +1,4 @@
-﻿using DeepLearningDataProvider.SampleSetExtensionMethods;
+﻿using DeepLearningDataProvider.SampleSetHelpers;
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;

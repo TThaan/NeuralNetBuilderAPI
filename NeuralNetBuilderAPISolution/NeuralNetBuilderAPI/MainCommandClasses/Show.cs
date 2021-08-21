@@ -1,4 +1,4 @@
-﻿using DeepLearningDataProvider.SampleSetExtensions;
+﻿using DeepLearningDataProvider.SampleSetHelpers;
 using NeuralNetBuilder;
 using System;
 using System.Collections.Generic;
