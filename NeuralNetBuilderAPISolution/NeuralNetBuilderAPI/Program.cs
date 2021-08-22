@@ -78,18 +78,18 @@ namespace NeuralNetBuilderAPI
 
         private static void Initializer_PropertyChanged(object sender, PropertyChangedEventArgs e)
         {
-            if(isInitializerPropertyChangedEventActive && e.PropertyName == nameof(initializer.Status))
-                Console.WriteLine($"{initializer.Status}");
+            if(isInitializerPropertyChangedEventActive && e.PropertyName == nameof(initializer.Notification))
+                Console.WriteLine($"{initializer.Notification}");
         }
         private static void PathBuilder_PropertyChanged(object sender, PropertyChangedEventArgs e)
         {
             // if (isInitializerStatusChangedEventActive)
-            Console.WriteLine($"{initializer.Status}");
+            Console.WriteLine($"{initializer.Notification}");
         }
         // private
-        public static void Trainer_StatusChanged(object trainer, TrainerStatusChangedEventArgs e)
+        public static void Trainer_PropertyChanged(object trainer, PropertyChangedEventArgs e)
         {
-            Console.WriteLine($"{stopwatch.ElapsedMilliseconds,10}: {e.Info}");
+            Console.WriteLine($"{stopwatch.ElapsedMilliseconds,10}: {e.PropertyName}");
         }
         private static void DataProvider_Changed(object initializer, DataProviderChangedEventArgs e)
         {

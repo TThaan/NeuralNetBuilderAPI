@@ -1,5 +1,4 @@
-﻿using DeepLearningDataProvider.SampleSetHelpers;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using static NeuralNetBuilderAPI.Program;   // To give this ICommandable access to Program. initializer/pathBuilder/paramBuilder. (Later: Use DI!)
@@ -68,7 +67,7 @@ namespace NeuralNetBuilderAPI.Commandables
 
             await paramBuilder.LoadTrainerParametersAsync(pathBuilder.TrainerParameters);
             initializer.CreateTrainer();
-            initializer.Trainer.TrainerStatusChanged += Trainer_StatusChanged;
+            initializer.Trainer.PropertyChanged += Trainer_PropertyChanged;
 
             // Activate logging
             isLogged = true;

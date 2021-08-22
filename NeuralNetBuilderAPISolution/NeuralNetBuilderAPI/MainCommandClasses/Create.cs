@@ -26,7 +26,7 @@ namespace NeuralNetBuilderAPI.Commandables
                         break;
                     case CreateCommand.trainer:
                         initializer.CreateTrainer();
-                        initializer.Trainer.TrainerStatusChanged += Trainer_StatusChanged;
+                        initializer.Trainer.PropertyChanged += Trainer_PropertyChanged;
                         break;
                     //case CreateCommand.par:
                     //    CreateAllParameters();
