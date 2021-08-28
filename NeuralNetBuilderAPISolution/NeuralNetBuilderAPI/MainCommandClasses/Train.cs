@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using DeepLearningDataProvider.SampleSetHelpers;
 using static NeuralNetBuilderAPI.Program;   // To give this ICommandable access to Program. initializer/pathBuilder/paramBuilder. (Later: Use DI!)
 
 namespace NeuralNetBuilderAPI.Commandables
@@ -41,7 +42,7 @@ namespace NeuralNetBuilderAPI.Commandables
         {
             stopwatch.Reset();
             stopwatch.Start();
-            await initializer.TrainAsync(shuffle);
+            await initializer.Trainer.TrainAsync(shuffle, pathBuilder.Log);
             stopwatch.Stop();
 
             // await initializer.SaveTrainedNetAsync();
@@ -54,19 +55,20 @@ namespace NeuralNetBuilderAPI.Commandables
 
             // Get samples
 
-            await initializer.LoadSampleSetAsync(pathBuilder.SampleSet, .1m, 0, null);
+            await initializer.SampleSet.LoadSamplesAsync(pathBuilder.SampleSet, 0, null);
+            initializer.SampleSet.Initialize(.1m);
                         
             // Get net
 
             await paramBuilder.LoadNetParametersAsync(pathBuilder.NetParameters);
-            await initializer.CreateNetAsync();
+            initializer.Net.Initialize(initializer.ParameterBuilder.NetParameters);
             // if (!await initializer.LoadNetAsync())
             //     return;        // Always check if the loaded initialized net suits loaded parameters!
 
             // Get trainer
 
             await paramBuilder.LoadTrainerParametersAsync(pathBuilder.TrainerParameters);
-            initializer.CreateTrainer();
+            initializer.Trainer.Initialize(initializer.ParameterBuilder.TrainerParameters, initializer.Net, initializer.SampleSet);
             initializer.Trainer.PropertyChanged += Trainer_PropertyChanged;
 
             // Activate logging

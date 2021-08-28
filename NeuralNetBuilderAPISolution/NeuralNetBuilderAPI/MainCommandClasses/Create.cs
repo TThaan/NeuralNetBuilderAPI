@@ -10,22 +10,24 @@ namespace NeuralNetBuilderAPI.Commandables
 
         public override async Task Execute(IEnumerable<string> parametersAndSubCommand)
         {
-            await Task.Run(async () =>
+            await Task.Run(() =>
             {
                 CreateCommand createCommand = GetSubCommand<CreateCommand>(parametersAndSubCommand, out var parameters);
                 CheckParameters(parameters, Show.InputInfo_Create, ConsoleInputCheck.EnsureNoOrSingleParameter);
-                var singleParameter = GetRestrictedParameter(parameters, PresetValue.append, true, $"{MainCommand.create}"); // GetSingleParameter<PresetValue>(parameters);  // Include in GetValidParameter?
+                var appendLabelsLayerToNetParameters = GetRestrictedParameter(parameters, PresetValue.append, true, $"{MainCommand.create}"); // GetSingleParameter<PresetValue>(parameters);  // Include in GetValidParameter?
 
                 switch (createCommand)
                 {
                     case CreateCommand.all:
-                        await CreateNetAndTrainerAsync();
+                        CreateNetAndTrainerAsync();
                         break;
                     case CreateCommand.net:
-                        await initializer.CreateNetAsync(singleParameter);
+                        //if (appendLabelsLayerToNetParameters == true)
+                        //    initializer.AppendLabelsLayerToNetParameters();
+                        initializer.Net.Initialize(initializer.ParameterBuilder.NetParameters);
                         break;
                     case CreateCommand.trainer:
-                        initializer.CreateTrainer();
+                        initializer.Trainer.Initialize(initializer.ParameterBuilder.TrainerParameters, initializer.Net, initializer.SampleSet);
                         initializer.Trainer.PropertyChanged += Trainer_PropertyChanged;
                         break;
                     //case CreateCommand.par:
@@ -54,10 +56,10 @@ namespace NeuralNetBuilderAPI.Commandables
 
         //    return true;
         //}
-        internal static async Task CreateNetAndTrainerAsync()
+        internal static void CreateNetAndTrainerAsync()
         {
-            await initializer.CreateNetAsync();
-            initializer.CreateTrainer();
+            initializer.Net.Initialize(initializer.ParameterBuilder.NetParameters);
+            initializer.Trainer.Initialize(initializer.ParameterBuilder.TrainerParameters, initializer.Net, initializer.SampleSet);
         }
 
         #endregion

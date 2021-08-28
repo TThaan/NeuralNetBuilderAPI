@@ -67,6 +67,8 @@ namespace NeuralNetBuilderAPI.Commandables
         /// <summary>
         /// Default values if you parameters miss an input helper:
         /// testSamplesInPercent = 10, columnIndex_Label = 0.
+        /// 
+        /// Task: Separate loading data from initializing (i.e. preparing)!
         /// </summary>
         internal static async Task LoadSampleSetAsync(string samplesFileName, IEnumerable<string> parameters)
         {
@@ -89,8 +91,8 @@ namespace NeuralNetBuilderAPI.Commandables
                     throw new ArgumentException($"Parameter value {labelParam.Split(':').Last()} is not valid." +
                         "Parameter value for 'label' must be a positive integer defining the index of the column holding the label values (First column index = 0!).");
 
-            decimal split = (decimal)testSamplesInPercent / 100; 
-            await initializer.LoadSampleSetAsync(samplesFileName, split, columnIndex_Label, null);
+            await initializer.SampleSet.LoadSamplesAsync(samplesFileName, columnIndex_Label, null);
+            initializer.SampleSet.Initialize((decimal)testSamplesInPercent / 100);
         }
 
         #endregion
