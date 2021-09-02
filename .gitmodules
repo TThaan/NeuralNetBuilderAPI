@@ -13,3 +13,6 @@
 [submodule "MatrixExtensions"]
 	path = MatrixExtensions
 	url = https://github.com/TThaan/MatrixExtensions.git
+[submodule "ObjectFlattener"]
+	path = ObjectFlattener
+	url = https://github.com/TThaan/ObjectFlattener.git
