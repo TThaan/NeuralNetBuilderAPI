@@ -1,9 +1,9 @@
-﻿
+
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 16
 VisualStudioVersion = 16.0.31313.79
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NeuralNetBuilderAPI", "NeuralNetBuilderAPI\NeuralNetBuilderAPI.csproj", "{4954ECF6-D389-447F-AE14-F530E169E80E}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NeuralNet_CLT", "NeuralNet_CLT\NeuralNet_CLT.csproj", "{4954ECF6-D389-447F-AE14-F530E169E80E}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

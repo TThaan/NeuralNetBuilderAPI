@@ -20,8 +20,8 @@
     <Reference Include="DeepLearningDataProvider">
       <HintPath>..\..\..\DeepLearningDataProvider\DeepLearningDataProviderSolution\DeepLearningDataProvider\bin\Debug\netcoreapp3.1\DeepLearningDataProvider.dll</HintPath>
     </Reference>
-    <Reference Include="NeuralNetBuilder">
-      <HintPath>..\..\..\NeuralNetBuilder2\NeuralNetBuilderSolution\NeuralNetBuilder\bin\Debug\netcoreapp3.1\NeuralNetBuilder.dll</HintPath>
+    <Reference Include="NeuralNet_Core">
+      <HintPath>..\..\..\NeuralNet_Core\NeuralNetBuilderSolution\NeuralNet_Core\bin\Debug\netcoreapp3.1\NeuralNet_Core.dll</HintPath>
     </Reference>
   </ItemGroup>
 

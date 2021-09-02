@@ -1,11 +1,11 @@
-﻿using NeuralNetBuilder;
+﻿using NeuralNet_Core;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using static NeuralNetBuilderAPI.GlobalConstants;
+using static NeuralNet_CLT.GlobalConstants;
 
-namespace NeuralNetBuilderAPI.Commandables
+namespace NeuralNet_CLT.Commandables
 {
     public abstract class CommandableBase   // : ICommandable
     {

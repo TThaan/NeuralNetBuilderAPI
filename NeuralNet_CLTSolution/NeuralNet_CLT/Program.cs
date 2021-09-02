@@ -1,17 +1,17 @@
 ﻿using ConsoleWindowChanger;
 using DeepLearningDataProvider;
-using NeuralNetBuilder;
-using NeuralNetBuilder.Builders;
-using NeuralNetBuilderAPI.Commandables;
+using NeuralNet_Core;
+using NeuralNet_Core.Builders;
+using NeuralNet_CLT.Commandables;
 using System;
 using System.ComponentModel;
 using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
-using static NeuralNetBuilderAPI.GlobalConstants;
-using static NeuralNetBuilderAPI.Helpers;
+using static NeuralNet_CLT.GlobalConstants;
+using static NeuralNet_CLT.Helpers;
 
-namespace NeuralNetBuilderAPI
+namespace NeuralNet_CLT
 {
     public class Program
     {

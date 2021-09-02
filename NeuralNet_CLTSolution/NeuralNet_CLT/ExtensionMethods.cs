@@ -1,11 +1,11 @@
-﻿using NeuralNetBuilder;
-using NeuralNetBuilderAPI.Commandables;
+﻿using NeuralNet_Core;
+using NeuralNet_CLT.Commandables;
 using System;
 using System.Linq;
 using System.Reflection;
-using static NeuralNetBuilderAPI.GlobalConstants;
+using static NeuralNet_CLT.GlobalConstants;
 
-namespace NeuralNetBuilderAPI
+namespace NeuralNet_CLT
 {
     internal static class ExtensionMethods
     {

@@ -1,4 +1,4 @@
-﻿namespace NeuralNetBuilderAPI
+﻿namespace NeuralNet_CLT
 {
     public enum MainCommand
     {

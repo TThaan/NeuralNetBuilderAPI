@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace NeuralNetBuilderAPI
+namespace NeuralNet_CLT
 {
     public static class Helpers
     {
