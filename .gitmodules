@@ -10,3 +10,6 @@
 [submodule "ImpEx"]
 	path = ImpEx
 	url = https://github.com/TThaan/ImpEx.git
+[submodule "MatrixExtensions"]
+	path = MatrixExtensions
+	url = https://github.com/TThaan/MatrixExtensions.git
