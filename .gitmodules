@@ -4,3 +4,6 @@
 [submodule "ConsoleWindowChanger"]
 	path = ConsoleWindowChanger
 	url = https://github.com/TThaan/ConsoleWindowChanger.git
+[submodule "CustomLogger"]
+	path = CustomLogger
+	url = https://github.com/TThaan/CustomLogger.git
