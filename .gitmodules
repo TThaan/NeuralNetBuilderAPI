@@ -7,3 +7,6 @@
 [submodule "CustomLogger"]
 	path = CustomLogger
 	url = https://github.com/TThaan/CustomLogger.git
+[submodule "ImpEx"]
+	path = ImpEx
+	url = https://github.com/TThaan/ImpEx.git
