@@ -1,2 +1,2 @@
-# NeuralNetBuilderAPI
- Simple Console API for NeuralNetBuilder
+# NeuralNet_CLT
+ Simple Command Line Tool for NeuralNet_Core
