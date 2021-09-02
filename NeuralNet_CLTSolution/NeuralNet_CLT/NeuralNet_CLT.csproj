@@ -17,8 +17,8 @@
     <Reference Include="CustomLogger">
       <HintPath>..\..\..\CustomLogger\CustomLoggerSolution\CustomLogger\bin\Debug\netcoreapp3.1\CustomLogger.dll</HintPath>
     </Reference>
-    <Reference Include="DeepLearningDataProvider">
-      <HintPath>..\..\..\DeepLearningDataProvider\DeepLearningDataProviderSolution\DeepLearningDataProvider\bin\Debug\netcoreapp3.1\DeepLearningDataProvider.dll</HintPath>
+    <Reference Include="MachineLearningDataProvider">
+      <HintPath>..\..\..\MachineLearningDataProvider\MachineLearningDataProviderSolution\MachineLearningDataProvider\bin\Debug\netcoreapp3.1\MachineLearningDataProvider.dll</HintPath>
     </Reference>
     <Reference Include="NeuralNet_Core">
       <HintPath>..\..\..\NeuralNet_Core\NeuralNetBuilderSolution\NeuralNet_Core\bin\Debug\netcoreapp3.1\NeuralNet_Core.dll</HintPath>

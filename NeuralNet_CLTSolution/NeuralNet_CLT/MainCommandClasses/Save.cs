@@ -1,4 +1,4 @@
-﻿using DeepLearningDataProvider.SampleSetHelpers;
+﻿using MachineLearningDataProvider.SampleSetHelpers;
 using Newtonsoft.Json;
 using System.Collections.Generic;
 using System.Threading.Tasks;

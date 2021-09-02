@@ -1,5 +1,5 @@
 ﻿using ConsoleWindowChanger;
-using DeepLearningDataProvider;
+using MachineLearningDataProvider;
 using NeuralNet_Core;
 using NeuralNet_Core.Builders;
 using NeuralNet_CLT.Commandables;

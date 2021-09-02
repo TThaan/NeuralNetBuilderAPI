@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
-using DeepLearningDataProvider.SampleSetHelpers;
+using MachineLearningDataProvider.SampleSetHelpers;
 using static NeuralNet_CLT.Program;   // To give this ICommandable access to Program. initializer/pathBuilder/paramBuilder. (Later: Use DI!)
 
 namespace NeuralNet_CLT.Commandables
